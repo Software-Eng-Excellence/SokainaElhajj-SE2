@@ -1,0 +1,32 @@
+{
+  "name": "se2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint src",
+    "clean": "rimraf build",
+    "prebuild": "npm run clean && npm run lint",
+    "build": "tsc",
+    "postbuild": "powershell -Command \"$sum=(Get-ChildItem -Recurse build -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum; $mb=$sum/1MB; Write-Host ('Finished build with size: {0:N2} MB' -f $mb)\"",
+    "prestart": "npm run build",
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev --respawn src/index.ts"
+  },
+  "keywords": [],
+  "author": "Sukaina",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "eslint": "^9.38.0",
+    "globals": "^16.4.0",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
+}
