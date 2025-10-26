@@ -34,6 +34,7 @@
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.6.0",
     "dotenv": "^17.2.3",
+    "fast-xml-parser": "^5.3.0",
     "winston": "^3.18.3"
   }
 }
