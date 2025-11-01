@@ -1,4 +1,4 @@
-import { parseJSON } from '../src/parsers/jsonParser';
+import { parseJSON } from '../../src/parsers/jsonParser';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -92,7 +92,7 @@ describe('JSON Parser - Mocked Unit Tests', () => {
 describe('JSON Parser - Real File Integration Test', () => {
     it('should parse actual JSON file from /src/data', async () => {
         // ⚠️ Do NOT mock fs.readFile here, use real file
-        const filePath = path.resolve(__dirname, '../src/data/book-orders.json');
+        const filePath = path.resolve(__dirname, '../../src/data/book-orders.json');
 
         const result = await parseJSON(filePath);
 
