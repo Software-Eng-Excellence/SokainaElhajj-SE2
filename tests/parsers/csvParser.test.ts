@@ -1,4 +1,4 @@
-import { parseCSV } from "../src/parsers/csvParser";
+import { parseCSV } from "../../src/parsers/csvParser";
 import fs from 'fs';
 import { Readable } from 'stream';
 import path from "path";
@@ -189,7 +189,7 @@ Fatima,20,false`;
     // Integration test with a real CSV file
     describe('CSV Parser - Real File', () => {
         it('should parse actual CSV file', async () => {
-            const filePath = path.resolve(__dirname, '../src/data/cake-orders.csv'); // absolute path to test data
+            const filePath = path.resolve(__dirname, '../../src/data/cake-orders.csv'); // absolute path to test data
             const rows = await parseCSV(filePath);
             expect(rows.length).toBeGreaterThan(0); // basic check that file is not empty
         });

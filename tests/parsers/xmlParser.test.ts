@@ -1,4 +1,4 @@
-import { parseXml } from '../src/parsers/xmlParser';
+import { parseXml } from '../../src/parsers/xmlParser';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -115,7 +115,7 @@ describe('XML Parser - Mocked Tests', () => {
 describe('XML Parser - Real File Integration', () => {
   it('should parse actual XML file from /src/data', async () => {
     // Use actual file, do not mock
-    const filePath = path.resolve(__dirname, '../src/data/toy-orders.xml');
+    const filePath = path.resolve(__dirname, '../../src/data/toy-orders.xml');
     const result = await parseXml(filePath);
 
     // Basic sanity checks
