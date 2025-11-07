@@ -26,6 +26,7 @@ export const parseCSV = (filePath: string): Promise<string[][]> => {
 
     // configure the CSV parser
     const parser = parse({
+      from_line: 2,
       relax_quotes: true,     // allow malformed quotes without breaking
       trim: true,             // trim spaces around each field
       skip_empty_lines: true, // ignore empty lines
