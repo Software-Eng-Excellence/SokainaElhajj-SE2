@@ -7,7 +7,7 @@ import logger from '../util/logger';
  * Parse a CSV file and return its content as a 2D array of strings.
  * Handles malformed quotes, trims spaces, skips empty lines, and allows variable column counts.
  */
-export const parseCSV = (filePath: string): Promise<string[][]> => {
+export const parseCSV = (filePath: string, skipHeader = false): Promise<string[][]> => { // added skipheader
   return new Promise((resolve, reject) => {
     const results: string[][] = []; // will hold all rows of CSV
 
@@ -26,7 +26,7 @@ export const parseCSV = (filePath: string): Promise<string[][]> => {
 
     // configure the CSV parser
     const parser = parse({
-      from_line: 2,
+      from_line: skipHeader ? 2 : 1,    // mapper needs to skip header while tester doesnt  
       relax_quotes: true,     // allow malformed quotes without breaking
       trim: true,             // trim spaces around each field
       skip_empty_lines: true, // ignore empty lines

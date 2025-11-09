@@ -190,7 +190,7 @@ Fatima,20,false`;
     describe('CSV Parser - Real File', () => {
         it('should parse actual CSV file', async () => {
             const filePath = path.resolve(__dirname, '../../src/data/cake-orders.csv'); // absolute path to test data
-            const rows = await parseCSV(filePath);
+            const rows = await parseCSV(filePath, false); // parser must see header line of data 
             expect(rows.length).toBeGreaterThan(0); // basic check that file is not empty
         });
     });

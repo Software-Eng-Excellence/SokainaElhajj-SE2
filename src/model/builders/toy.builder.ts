@@ -9,6 +9,10 @@ export class ToyBuilder {
     private material!: string;
     private batteryRequired!: boolean;
     private educational!: boolean;
+    // added function
+    public static newBuilder(): ToyBuilder {
+        return new ToyBuilder();
+    }
 
     setType(type: string): ToyBuilder {
         this.type = type;
@@ -30,7 +34,7 @@ export class ToyBuilder {
         return this;
     }
 
-    setBatterRequired(batteryRequired: boolean): ToyBuilder {
+    setBatteryRequired(batteryRequired: boolean): ToyBuilder {
         this.batteryRequired = batteryRequired;
         return this;
     }
