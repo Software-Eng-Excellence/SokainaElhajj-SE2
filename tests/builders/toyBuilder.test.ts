@@ -13,7 +13,7 @@ describe("Toy Builder", () => {
         .setAgeGroup("13+")
         .setBrand("FunTime")
         .setMaterial("Fabric")
-        .setBatterRequired(true)
+        .setBatteryRequired(true) // solved a typo
         .setEducational(true)
         .build()
             
@@ -26,7 +26,7 @@ describe("Toy Builder", () => {
     it("should throw an error if a required field is empty", () => {
         const toy = new ToyBuilder()
             .setAgeGroup("3+")
-            .setBatterRequired(false)
+            .setBatteryRequired(false) // solved a typo
            
         expect(() => toy.build()).toThrow("Missing required properties");
         
