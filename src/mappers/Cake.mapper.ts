@@ -8,20 +8,21 @@ export class CakeMapper implements IMapper<string[] | Record<string, any>, Cake>
 
         if (Array.isArray(data)) {
             // CSV: validate types
-            if (typeof data[1] !== 'string') throw new Error('Invalid type for Type');
-            if (typeof data[2] !== 'string') throw new Error('Invalid type for Flavor');
-            if (typeof data[3] !== 'string') throw new Error('Invalid type for Filling');
-            if (isNaN(parseInt(data[4]))) throw new Error('Invalid type for Size');
-            if (isNaN(parseInt(data[5]))) throw new Error('Invalid type for Layers');
-            if (typeof data[6] !== 'string') throw new Error('Invalid type for Frosting Type');
-            if (typeof data[7] !== 'string') throw new Error('Invalid type for Frosting Flavor');
-            if (typeof data[8] !== 'string') throw new Error('Invalid type for Decoration Type');
-            if (typeof data[9] !== 'string') throw new Error('Invalid type for Decoration Color');
-            if (typeof data[10] !== 'string') throw new Error('Invalid type for Custom Message');
-            if (typeof data[11] !== 'string') throw new Error('Invalid type for Shape');
-            if (typeof data[12] !== 'string') throw new Error('Invalid type for Allergies');
-            if (typeof data[13] !== 'string') throw new Error('Invalid type for Special Ingredients');
-            if (typeof data[14] !== 'string') throw new Error('Invalid type for Packaging Type');
+            const checks = ['Type', 'Flavor', 'Filling', 'Size', 'Layers', 'Frosting Type', 'Frosting Flavor', 'Decoration Type', 'Decoration Color', 'Custom Message', 'Shape', 'Allergies', 'Special Ingredients', 'Packaging Type'];
+            const indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+            const types = ['string', 'string', 'string', 'number', 'number', 'string', 'string', 'string', 'string', 'string', 'string', 'string', 'string', 'string'];
+            
+            for (let i = 0; i < checks.length; i++) {
+                if (types[i] === 'string') {
+                    if (typeof data[indices[i]] !== 'string') {
+                        throw new Error(`Invalid type for ${checks[i]}`);
+                    }
+                } else if (types[i] === 'number') {
+                    if (isNaN(parseInt(data[indices[i]]))) {
+                        throw new Error(`Invalid type for ${checks[i]}`);
+                    }
+                }
+            }
 
             return builder
                 .setType(data[1])
@@ -41,20 +42,20 @@ export class CakeMapper implements IMapper<string[] | Record<string, any>, Cake>
                 .build();
         } else {
             // JSON or XML: validate types
-            if (typeof data["Type"] !== 'string') throw new Error('Invalid type for Type');
-            if (typeof data["Flavor"] !== 'string') throw new Error('Invalid type for Flavor');
-            if (typeof data["Filling"] !== 'string') throw new Error('Invalid type for Filling');
-            if (isNaN(parseInt(data["Size"]))) throw new Error('Invalid type for Size');
-            if (isNaN(parseInt(data["Layers"]))) throw new Error('Invalid type for Layers');
-            if (typeof data["Frosting Type"] !== 'string') throw new Error('Invalid type for Frosting Type');
-            if (typeof data["Frosting Flavor"] !== 'string') throw new Error('Invalid type for Frosting Flavor');
-            if (typeof data["Decoration Type"] !== 'string') throw new Error('Invalid type for Decoration Type');
-            if (typeof data["Decoration Color"] !== 'string') throw new Error('Invalid type for Decoration Color');
-            if (typeof data["Custom Message"] !== 'string') throw new Error('Invalid type for Custom Message');
-            if (typeof data["Shape"] !== 'string') throw new Error('Invalid type for Shape');
-            if (typeof data["Allergies"] !== 'string') throw new Error('Invalid type for Allergies');
-            if (typeof data["Special Ingredients"] !== 'string') throw new Error('Invalid type for Special Ingredients');
-            if (typeof data["Packaging Type"] !== 'string') throw new Error('Invalid type for Packaging Type');
+            const checks = ['Type', 'Flavor', 'Filling', 'Size', 'Layers', 'Frosting Type', 'Frosting Flavor', 'Decoration Type', 'Decoration Color', 'Custom Message', 'Shape', 'Allergies', 'Special Ingredients', 'Packaging Type'];
+            const types = ['string', 'string', 'string', 'number', 'number', 'string', 'string', 'string', 'string', 'string', 'string', 'string', 'string', 'string'];
+            
+            for (let i = 0; i < checks.length; i++) {
+                if (types[i] === 'string') {
+                    if (typeof data[checks[i]] !== 'string') {
+                        throw new Error(`Invalid type for ${checks[i]}`);
+                    }
+                } else if (types[i] === 'number') {
+                    if (isNaN(parseInt(data[checks[i]]))) {
+                        throw new Error(`Invalid type for ${checks[i]}`);
+                    }
+                }
+            }
 
             return builder
                 .setType(data["Type"])

@@ -8,14 +8,12 @@ export class BookMapper implements IMapper<string[] | Record<string, any>, Book>
 
         if (Array.isArray(data)) {
             // CSV: validate types 
-            if (typeof data[1] !== 'string') throw new Error('Invalid type for title');
-            if (typeof data[2] !== 'string') throw new Error('Invalid type for author');
-            if (typeof data[3] !== 'string') throw new Error('Invalid type for genre');
-            if (typeof data[4] !== 'string') throw new Error('Invalid type for format');
-            if (typeof data[5] !== 'string') throw new Error('Invalid type for language');
-            if (typeof data[6] !== 'string') throw new Error('Invalid type for publisher');
-            if (typeof data[7] !== 'string') throw new Error('Invalid type for specialEdition');
-            if (typeof data[8] !== 'string') throw new Error('Invalid type for packaging');
+            const csvChecks = ['bookTitle', 'author', 'genre', 'format', 'language', 'publisher', 'specialEdition', 'packaging'];
+            for (let i = 0; i < csvChecks.length; i++){
+                if (typeof data[i + 1] !== 'string'){
+                    throw new Error(`Invalid type for ${csvChecks[i]}`);
+                }
+            }
 
             return builder
                 .setTitle(data[1])
@@ -29,14 +27,12 @@ export class BookMapper implements IMapper<string[] | Record<string, any>, Book>
                 .build();
         } else {
             // JSON or XML: validate types
-            if (typeof data["Book Title"] !== 'string') throw new Error('Invalid type for Book Title');
-            if (typeof data["Author"] !== 'string') throw new Error('Invalid type for Author');
-            if (typeof data["Genre"] !== 'string') throw new Error('Invalid type for Genre');
-            if (typeof data["Format"] !== 'string') throw new Error('Invalid type for Format');
-            if (typeof data["Language"] !== 'string') throw new Error('Invalid type for Language');
-            if (typeof data["Publisher"] !== 'string') throw new Error('Invalid type for Publisher');
-            if (typeof data["Special Edition"] !== 'string') throw new Error('Invalid type for Special Edition');
-            if (typeof data["Packaging"] !== 'string') throw new Error('Invalid type for Packaging');
+            const jsonChecks = ['Book Title', 'Author', 'Genre', 'Format', 'Language', 'Publisher', 'Special Edition', 'Packaging'];
+            for (const field of jsonChecks) {
+                if (typeof data[field] !== 'string') {
+                    throw new Error(`Invalid type for ${field}`);
+                }
+            }
 
             return builder
                 .setTitle(data["Book Title"])

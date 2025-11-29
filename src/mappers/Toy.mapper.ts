@@ -8,12 +8,12 @@ export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
 
         if (Array.isArray(data)) {
             // CSV: validate types
-            if (typeof data[1] !== 'string') throw new Error('Invalid type for Type');
-            if (typeof data[2] !== 'string') throw new Error('Invalid type for AgeGroup');
-            if (typeof data[3] !== 'string') throw new Error('Invalid type for Brand');
-            if (typeof data[4] !== 'string') throw new Error('Invalid type for Material');
-            if (typeof data[5] !== 'boolean') throw new Error('Invalid type for BatteryRequired');
-            if (typeof data[6] !== 'boolean') throw new Error('Invalid type for Educational');
+            const checks = ['Type', 'AgeGroup', 'Brand', 'Material', 'BatteryRequired', 'Educational'];
+            for (let i = 0; i < checks.length; i++) {
+                if (typeof data[i + 1] !== 'string') {
+                    throw new Error(`Invalid type for ${checks[i]}`);
+                }
+            }
 
             return builder
                 .setType(data[1])
@@ -25,12 +25,12 @@ export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
                 .build();
         } else {
             // JSON or XML: validate types
-            if (typeof data["Type"] !== 'string') throw new Error('Invalid type for Type');
-            if (typeof data["AgeGroup"] !== 'string') throw new Error('Invalid type for AgeGroup');
-            if (typeof data["Brand"] !== 'string') throw new Error('Invalid type for Brand');
-            if (typeof data["Material"] !== 'string') throw new Error('Invalid type for Material');
-            if (typeof data["BatteryRequired"] !== 'boolean') throw new Error('Invalid type for BatteryRequired');
-            if (typeof data["Educational"] !== 'boolean') throw new Error('Invalid type for Educational');
+            const checks = ['Type', 'AgeGroup', 'Brand', 'Material', 'BatteryRequired', 'Educational'];
+            for (let i = 0; i < checks.length; i++) {
+                if (typeof data[checks[i]] !== 'string') {
+                    throw new Error(`Invalid type for ${checks[i]}`);
+                }
+            }
 
             return builder
                 .setType(data["Type"])
