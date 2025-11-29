@@ -50,4 +50,16 @@ export class BookMapper implements IMapper<string[] | Record<string, any>, Book>
                 .build();
         }
     }
+    reverseMap(data: Book): string[] {
+        return [
+            data.getTitle(),
+            data.getAuthor(),
+            data.getGenre(),
+            data.getFormat(),
+            data.getLanguage(),
+            data.getPublisher(),
+            data.getSpecialEdition(),
+            data.getPackaging()
+        ];
+    }
 }

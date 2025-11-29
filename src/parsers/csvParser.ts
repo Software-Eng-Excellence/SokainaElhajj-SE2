@@ -2,6 +2,9 @@
 import fs from 'fs';
 import { parse } from 'csv-parse';
 import logger from '../util/logger';
+import { stringify as csvStringify } from 'csv-stringify';
+import { promises as fsPromises } from 'fs';
+
 
 /**
  * Parse a CSV file and return its content as a 2D array of strings.
@@ -55,4 +58,22 @@ export const parseCSV = (filePath: string, skipHeader = false): Promise<string[]
       resolve(results);
     });
   });
+};
+
+/**
+ * Write a 2D array of strings to a CSV file.
+ * Handles proper quoting, escaping, and line breaks.
+ */
+export const writeCSVFile = async (filePath: string, data: string[][]): Promise<void> => {
+  try {
+    const csvContent = await new Promise<string>((resolve, reject) => {
+      csvStringify(data, (err, output) => {
+        if (err) reject (err);
+        resolve(output);
+      });
+    });
+    await fsPromises.writeFile(filePath, csvContent, 'utf-8');
+  } catch (error) {
+    throw new Error(`Error writing CSV file: ${error}`);
+  }
 };

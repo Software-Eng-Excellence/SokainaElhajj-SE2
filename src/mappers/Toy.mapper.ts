@@ -42,4 +42,14 @@ export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
                 .build();
         }
     }
+    reverseMap(data: Toy): string[] {
+        return [
+            data.getType(),
+            data.getAgeGroup(),
+            data.getBrand(),
+            data.getMaterial(),
+            data.getBatteryRequired().toString(),
+            data.getEducational().toString()
+        ];
+    }
 }
