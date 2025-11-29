@@ -7,5 +7,6 @@
 coverage/
 .vscode/
 .env
-logsnode_modules/
+logs/
+node_modules/
 node_modules/*.json
