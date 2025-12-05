@@ -1,5 +1,5 @@
-import { ToyBuilder } from "../model/builders/toy.builder";
-import { Toy } from "../model/Toy.model";
+import { IdentifiableToyBuilder, ToyBuilder } from "../model/builders/toy.builder";
+import { IdentifiableToy, Toy } from "../model/Toy.model";
 import { IMapper } from "./IMapper";
 
 export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
@@ -51,5 +51,43 @@ export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
             data.getBatteryRequired().toString(),
             data.getEducational().toString()
         ];
+    }
+}
+
+export interface DatabaseToy {
+    id: string;
+    type: string;
+    ageGroup: string;
+    brand: string;
+    material: string;
+    batteryRequired: boolean;
+    educational: boolean;
+}
+
+export class DatabaseToyMapper implements IMapper<DatabaseToy, IdentifiableToy>{
+    map(data: DatabaseToy): IdentifiableToy {
+        return IdentifiableToyBuilder.newBuilder()
+            .setId(data.id)
+            .setToy(ToyBuilder.newBuilder()
+                .setType(data.type)
+                .setAgeGroup(data.ageGroup)
+                .setBrand(data.brand)
+                .setMaterial(data.material)
+                .setBatteryRequired(data.batteryRequired)
+                .setEducational(data.educational)
+                .build())
+            .build();
+    }
+
+    reverseMap(data: IdentifiableToy): DatabaseToy {
+        return {
+            id: data.getId(),
+            type: data.getType(),
+            ageGroup: data.getAgeGroup(),
+            brand: data.getBrand(),
+            material: data.getMaterial(),
+            batteryRequired: data.getBatteryRequired(),
+            educational: data.getEducational()
+        }
     }
 }

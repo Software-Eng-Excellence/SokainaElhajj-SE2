@@ -4,7 +4,7 @@ import { DbException, InitializationException } from "../../util/exceptions/repo
 import logger from "../../util/logger";
 import { ConnectionManager } from "./ConnectionManager";
 import { IIdentifiableItem } from "../../model/IItem";
-import { SQLiteOrder, SQLiteOrderMapper } from "../../mappers/Order.mapper";
+import { DatabaseOrder, DatabaseOrderMapper } from "../../mappers/Order.mapper";
 
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS "order" (
     id TEXT PRIMARY KEY,
@@ -72,13 +72,13 @@ export class OrderRepository implements IRepository<IIdentifiableOrderItem>, Ini
     async get(id: id): Promise<IIdentifiableOrderItem> {
         try {
             const conn = await ConnectionManager.getConnection();
-            const result = await conn.get<SQLiteOrder>(SELECT_BY_ID, id);
+            const result = await conn.get<DatabaseOrder>(SELECT_BY_ID, id);
             if (!result){
                 logger.error("Order of id %s not found", id);
                 throw new Error("Order of id " + id + " not found")
             }
             const item = await this.itemRepository.get(result.item_id);
-            return new SQLiteOrderMapper().map({data: result, item: item}); // TODO must remove and map
+            return new DatabaseOrderMapper().map({data: result, item: item}); // TODO must remove and map
         } catch (error: unknown) {
             logger.error("Failed to get order of id %s %o", id, error as Error);
             throw new DbException("Failed to get order of id" + id, error as Error);
@@ -92,7 +92,7 @@ export class OrderRepository implements IRepository<IIdentifiableOrderItem>, Ini
             if (items.length == 0){
                 return [];
             }
-            const orders = await conn.all<SQLiteOrder[]>(SELECT_ALL, items[0].getCategory());
+            const orders = await conn.all<DatabaseOrder[]>(SELECT_ALL, items[0].getCategory());
             
             const bindedOrders = orders.map((order) => {
                 const item = items.find((item) => item.getId() === order.item_id);
@@ -102,7 +102,7 @@ export class OrderRepository implements IRepository<IIdentifiableOrderItem>, Ini
                 return {order, item};
             });
 
-            const mapper = new SQLiteOrderMapper();
+            const mapper = new DatabaseOrderMapper();
             const identifiableOrders = bindedOrders.map(({order, item}) => {
                 return mapper.map({data: order, item})
             });

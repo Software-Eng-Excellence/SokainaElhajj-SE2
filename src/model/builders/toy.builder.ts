@@ -1,5 +1,5 @@
 import logger from "../../util/logger";
-import { Toy } from "../Toy.model";
+import { IdentifiableToy, Toy } from "../Toy.model";
 
 export class ToyBuilder {
 
@@ -50,8 +50,6 @@ export class ToyBuilder {
             this.ageGroup,
             this.brand,
             this.material,
-            this.batteryRequired,
-            this.educational
         ];
 
         for (const property of requiredProperties) {
@@ -59,6 +57,11 @@ export class ToyBuilder {
                 logger.error("Missing required properties, could not build a toy");
                 throw new Error("Missing required properties");
             }
+        }
+    
+         if (this.batteryRequired === undefined || this.educational === undefined) {
+            logger.error("Missing required properties, could not build a toy");
+            throw new Error("Missing required properties");
         }
 
         return new Toy (
@@ -70,4 +73,38 @@ export class ToyBuilder {
             this.educational
         );
     }
+}
+
+export class IdentifiableToyBuilder {
+    private id!: string;
+    private toy! : Toy;
+
+    static newBuilder(): IdentifiableToyBuilder {
+        return new IdentifiableToyBuilder();
+    } 
+
+    setId(id: string): IdentifiableToyBuilder {
+        this.id = id;
+        return this;
+    }
+
+    setToy(toy: Toy): IdentifiableToyBuilder {
+        this.toy = toy;
+        return this;
+    }
+    build(): IdentifiableToy {
+            if (!this.id || !this.toy){
+                logger.error("Missing required properties, could not build an identifiable toy");
+                throw new Error("Missing required properties");
+            }
+            return new IdentifiableToy(
+                this.id,
+                this.toy.getType(),
+                this.toy.getAgeGroup(),
+                this.toy.getBrand(),
+                this.toy.getMaterial(),
+                this.toy.getBatteryRequired(),
+                this.toy.getEducational(),
+            );
+        }
 }

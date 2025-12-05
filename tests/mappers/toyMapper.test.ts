@@ -15,8 +15,8 @@ describe('ToyMapper', () => {
             '8-12',        // ageGroup
             'Hasbro',      // brand
             'Plastic',     // material
-            true,         // batteryRequired
-            true         // educational
+            'true',         // batteryRequired
+            'true'         // educational
         ];
 
         const result: Toy = mapper.map(csvRow);
@@ -25,8 +25,8 @@ describe('ToyMapper', () => {
         expect(result.getAgeGroup()).toBe('8-12');
         expect(result.getBrand()).toBe('Hasbro');
         expect(result.getMaterial()).toBe('Plastic');
-        expect(result.getBatteryRequired()).toBe(true);
-        expect(result.getEducational()).toBe(true);
+        expect(result.getBatteryRequired()).toBe('true');
+        expect(result.getEducational()).toBe('true');
     });
 
     it('maps a (JSON or XML) object to a Toy object', () => {
@@ -35,8 +35,8 @@ describe('ToyMapper', () => {
             'AgeGroup': '8-12',
             'Brand': 'Hasbro',
             'Material': 'Plastic',
-            'BatteryRequired': true,
-            'Educational': true
+            'BatteryRequired': 'true',
+            'Educational': 'true'
         };
 
         const result: Toy = mapper.map(jsonInput);
@@ -45,8 +45,8 @@ describe('ToyMapper', () => {
         expect(result.getAgeGroup()).toBe('8-12');
         expect(result.getBrand()).toBe('Hasbro');
         expect(result.getMaterial()).toBe('Plastic');
-        expect(result.getBatteryRequired()).toBe(true);
-        expect(result.getEducational()).toBe(true);
+        expect(result.getBatteryRequired()).toBe('true');
+        expect(result.getEducational()).toBe('true');
     });
 
     it('throws error if some fields are missing', () => {

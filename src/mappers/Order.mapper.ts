@@ -1,5 +1,5 @@
 import { IdentifiableOrderItemBuilder, OrderBuilder } from "../model/builders/order.builder";
-import { IOrder } from "../model/IOrder";
+import { IIdentifiableOrderItem, IOrder } from "../model/IOrder";
 import { IMapper } from "./IMapper";
 import { IIdentifiableItem, IItem } from "../model/IItem";
 import { IdentifiableOrderItem } from "model/Order.model";
@@ -48,12 +48,20 @@ export class OrderMapper implements IMapper<string [] | Record<string, any>, IOr
     }
 }
 
+// Both databases use same
+export interface DatabaseOrder {
+    id: string;
+    quantity: number;
+    price: number;
+    item_category: string;
+    item_id: string;
+}
 
-export class SQLiteOrderMapper implements IMapper<{data:SQLiteOrder, item: IIdentifiableItem}, IdentifiableOrderItem> {
+export class DatabaseOrderMapper implements IMapper<{data:DatabaseOrder, item: IIdentifiableItem}, IdentifiableOrderItem> {
     // constructor (private itemMapper: IMapper<string[], IItem>){
 
     // }
-    map({data, item}: {data:SQLiteOrder, item: IIdentifiableItem}): IdentifiableOrderItem {
+    map({data, item}: {data:DatabaseOrder, item: IIdentifiableItem}): IdentifiableOrderItem {
         const order = OrderBuilder.newBuilder().setId(data.id)
         .setPrice(data.price)
         .setQuantity(data.quantity)
@@ -61,7 +69,8 @@ export class SQLiteOrderMapper implements IMapper<{data:SQLiteOrder, item: IIden
         .build();
         return IdentifiableOrderItemBuilder.newBuilder().setOrder(order).setItem(item).build();
     }
-    reverseMap(data: IdentifiableOrderItem): {data:SQLiteOrder, item: IIdentifiableItem} {
+
+    reverseMap(data: IdentifiableOrderItem): {data:DatabaseOrder, item: IIdentifiableItem} {
         return {
             data: {
                 id: data.getId(),
@@ -74,12 +83,3 @@ export class SQLiteOrderMapper implements IMapper<{data:SQLiteOrder, item: IIden
         }
     }
 }
-
-export interface SQLiteOrder {
-    id: string;
-    quantity: number;
-    price: number;
-    item_category: string;
-    item_id: string;
-}
-

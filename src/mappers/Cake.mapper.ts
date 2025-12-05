@@ -96,14 +96,15 @@ export class CakeMapper implements IMapper<string[] | Record<string, any>, Cake>
     }
 }
 
-export interface SQLiteCake {
+// Both Databases return the same shape
+export interface DatabaseCake {
     id: string;
     type: string;
     flavor: string;
     filling: string;
     size: number;
     layers: number;
-    frostingType: string;
+    frostingType: string;     
     frostingFlavor: string;
     decorationType: string;
     decorationColor: string;
@@ -114,29 +115,31 @@ export interface SQLiteCake {
     packagingType: string;
 }
 
-export class SQLiteCakeMapper implements IMapper< SQLiteCake, IdentifiableCake> {
-    map(data: SQLiteCake): IdentifiableCake {
+export class DatabaseCakeMapper implements IMapper<DatabaseCake, IdentifiableCake> {
+    
+    map(data: DatabaseCake): IdentifiableCake {
         return IdentifiableCakeBuilder.newBuilder()
-                    .setCake(CakeBuilder.newBuilder()
-                    .setType(data.type)
-                    .setFlavor(data.flavor)
-                    .setFilling(data.filling)
-                    .setSize(data.size)
-                    .setLayers(data.layers)
-                    .setFrostingType(data.frostingType)
-                    .setFrostingFlavor(data.frostingFlavor)
-                    .setDecorationType(data.decorationType)
-                    .setDecorationColor(data.decorationColor)
-                    .setCustomMessage(data.customMessage)
-                    .setShape(data.shape)
-                    .setAllergies(data.allergies)
-                    .setSpecialIngredients(data.specialIngredients)
-                    .setPackagingType(data.packagingType)
-                    .build())
-                .setId(data.id)
-                .build();
+            .setId(data.id)
+            .setCake(CakeBuilder.newBuilder()
+                .setType(data.type)
+                .setFlavor(data.flavor)
+                .setFilling(data.filling)
+                .setSize(data.size)
+                .setLayers(data.layers)
+                .setFrostingType(data.frostingType)
+                .setFrostingFlavor(data.frostingFlavor)
+                .setDecorationType(data.decorationType)
+                .setDecorationColor(data.decorationColor)
+                .setCustomMessage(data.customMessage)
+                .setShape(data.shape)
+                .setAllergies(data.allergies)
+                .setSpecialIngredients(data.specialIngredients)
+                .setPackagingType(data.packagingType)
+                .build())
+            .build();
     }
-    reverseMap(data: IdentifiableCake): SQLiteCake {
+
+    reverseMap(data: IdentifiableCake): DatabaseCake {
         return {
             id: data.getId(),
             type: data.getType(),
@@ -155,5 +158,4 @@ export class SQLiteCakeMapper implements IMapper< SQLiteCake, IdentifiableCake> 
             packagingType: data.getPackagingType()
         };
     }
-    
 }
