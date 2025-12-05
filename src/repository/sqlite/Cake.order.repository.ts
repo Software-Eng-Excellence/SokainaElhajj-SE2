@@ -4,7 +4,7 @@ import { DbException, InitializationException, ItemNotFoundException } from "../
 import logger from "../../util/logger";
 import { ConnectionManager } from "./ConnectionManager";
 import { ItemCategory } from "../../model/IItem";
-import { SQLiteCake, SQLiteCakeMapper } from "../../mappers/Cake.mapper";
+import { DatabaseCake, DatabaseCakeMapper } from "../../mappers/Cake.mapper";
 
 
 const tableName = ItemCategory.CAKE;
@@ -101,11 +101,11 @@ export class CakeRepository implements IRepository<IdentifiableCake>, Initializa
     async get(id: id): Promise<IdentifiableCake> {
         try {
             const conn = await ConnectionManager.getConnection();
-            const result = await conn.get<SQLiteCake>(SELECT_BY_ID, id);
+            const result = await conn.get<DatabaseCake>(SELECT_BY_ID, id);
             if (!result){
                 throw new ItemNotFoundException("Cake of id " + id + " not found");
             }
-            return new SQLiteCakeMapper().map(result); // TODO must remove and map
+            return new DatabaseCakeMapper().map(result); // TODO must remove and map
         } catch (error: unknown) {
             logger.error("Failed to get cake of id %s %o", id, error as Error);
             throw new DbException("Failed to get cake of id" + id, error as Error);
@@ -115,8 +115,8 @@ export class CakeRepository implements IRepository<IdentifiableCake>, Initializa
     async getAll(): Promise<IdentifiableCake[]> {
         try {
             const conn = await ConnectionManager.getConnection();
-            const result = await conn.all<SQLiteCake[]>(SELECT_ALL);
-            const mapper = new SQLiteCakeMapper();
+            const result = await conn.all<DatabaseCake[]>(SELECT_ALL);
+            const mapper = new DatabaseCakeMapper();
             return result.map((cake) => mapper.map(cake));
         } catch (error: unknown) {
             logger.error("Failed to get all cakes");

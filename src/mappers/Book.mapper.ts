@@ -1,5 +1,5 @@
-import { BookBuilder } from "../model/builders/book.builder";
-import { Book } from "../model/Book.model";
+import { BookBuilder, IdentifiableBookBuilder } from "../model/builders/book.builder";
+import { Book, IdentifiableBook } from "../model/Book.model";
 import { IMapper } from "./IMapper";
 
 export class BookMapper implements IMapper<string[] | Record<string, any>, Book> {
@@ -57,5 +57,49 @@ export class BookMapper implements IMapper<string[] | Record<string, any>, Book>
             data.getSpecialEdition(),
             data.getPackaging()
         ];
+    }
+}
+
+export interface DatabaseBook {
+    id: string;
+    title: string,
+    author: string,
+    genre: string,
+    format: string,
+    language: string,
+    publisher: string,
+    specialEdition: string,
+    packaging: string
+};
+
+export class DatabaseBookMapper implements IMapper<DatabaseBook, IdentifiableBook> {
+    map(data: DatabaseBook): IdentifiableBook {
+        return IdentifiableBookBuilder.newBuilder()
+            .setId(data.id)
+            .setBook(BookBuilder.newBuilder()
+                .setTitle(data.title)
+                .setAuthor(data.author)
+                .setGenre(data.genre)
+                .setFormat(data.format)
+                .setLanguage(data.language)
+                .setPublisher(data.publisher)
+                .setSpecialEdition(data.specialEdition)
+                .setPackaging(data.packaging)
+                .build())
+            .build();
+    }
+
+    reverseMap(data: IdentifiableBook): DatabaseBook {
+        return {
+            id: data.getId(),
+            title: data.getTitle(),
+            author: data.getAuthor(),
+            genre: data.getGenre(),
+            format: data.getFormat(),
+            language: data.getLanguage(),
+            publisher: data.getPublisher(),
+            specialEdition: data.getSpecialEdition(),
+            packaging: data.getPackaging()
+        };
     }
 }
