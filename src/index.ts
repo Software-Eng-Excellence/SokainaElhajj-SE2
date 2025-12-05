@@ -4,11 +4,12 @@ import config from "./config";
 import { CakeBuilder, IdentifiableCakeBuilder } from "./model/builders/cake.builder";
 import { IdentifiableOrderItemBuilder, OrderBuilder } from "./model/builders/order.builder";
 import { OrderRepository } from "./repository/postgreSQL/Order.repository";
-import { CakeRepository } from "./repository/postgreSQL/Cake.repository";
 import { BookRepository } from "./repository/postgreSQL/Book.repository";
 import { ToyRepository } from "./repository/postgreSQL/Toy.repository";
 import { BookBuilder, IdentifiableBookBuilder } from "./model/builders/book.builder";
 import { ToyBuilder, IdentifiableToyBuilder } from "./model/builders/toy.builder";
+import { DBMode, RepositoryFactory } from "./repository/Repository.factory";
+import { ItemCategory } from "./model/IItem";
 
 
 async function main() {
@@ -25,8 +26,7 @@ async function DBSandBox() {
     // CAKE
     logger.info("========== TESTING CAKE ORDERS ==========");
     
-    const cakeOrderRepo = new OrderRepository(new CakeRepository());
-    await cakeOrderRepo.init();
+    const cakeRepo = await RepositoryFactory.create(DBMode.SQLITE, ItemCategory.CAKE);
 
     const cake = CakeBuilder.newBuilder()
         .setType("Birthday")
@@ -62,10 +62,10 @@ async function DBSandBox() {
         .setOrder(cakeOrder)
         .build();
 
-    await cakeOrderRepo.create(idCakeOrder);
-    await cakeOrderRepo.update(idCakeOrder);
+    await cakeRepo.create(idCakeOrder);
+    await cakeRepo.update(idCakeOrder);
 
-    const allCakeOrders = await cakeOrderRepo.getAll();
+    const allCakeOrders = await cakeRepo.getAll();
     logger.info("Current Cake Orders: %o", allCakeOrders);
 
 
