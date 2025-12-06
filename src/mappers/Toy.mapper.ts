@@ -24,24 +24,34 @@ export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
                 .setEducational(data[6])
                 .build();
         } else {
-            // JSON or XML: validate types
-            const checks = ['Type', 'AgeGroup', 'Brand', 'Material', 'BatteryRequired', 'Educational'];
-            for (let i = 0; i < checks.length; i++) {
-                if (typeof data[checks[i]] !== 'string') {
-                    throw new Error(`Invalid type for ${checks[i]}`);
+            // JSON or XML: validate only string fields
+            const stringChecks = ['Type', 'AgeGroup', 'Brand', 'Material'];
+            for (const field of stringChecks) {
+                if (typeof data[field] !== 'string') {
+                    throw new Error(`Invalid type for ${field}`);
                 }
             }
+
+            // In the else block (JSON/XML)
+            const batteryRequired = typeof data["BatteryRequired"] === 'boolean' 
+                ? data["BatteryRequired"] 
+                : data["BatteryRequired"] === 'true' || data["BatteryRequired"] === 'Yes';
+
+            const educational = typeof data["Educational"] === 'boolean'
+                ? data["Educational"]
+                : data["Educational"] === 'true' || data["Educational"] === 'Yes';
 
             return builder
                 .setType(data["Type"])
                 .setAgeGroup(data["AgeGroup"])
                 .setBrand(data["Brand"])
                 .setMaterial(data["Material"])
-                .setBatteryRequired(data["BatteryRequired"])
-                .setEducational(data["Educational"])
+                .setBatteryRequired(batteryRequired)
+                .setEducational(educational)
                 .build();
         }
     }
+
     reverseMap(data: Toy): string[] {
         return [
             data.getType(),
@@ -73,8 +83,8 @@ export class DatabaseToyMapper implements IMapper<DatabaseToy, IdentifiableToy>{
                 .setAgeGroup(data.ageGroup)
                 .setBrand(data.brand)
                 .setMaterial(data.material)
-                .setBatteryRequired(data.batteryRequired)
-                .setEducational(data.educational)
+                .setBatteryRequired(Boolean(data.batteryRequired))  // Works for postgre and sqlite
+                .setEducational(Boolean(data.educational))         
                 .build())
             .build();
     }

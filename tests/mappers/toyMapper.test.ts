@@ -45,8 +45,8 @@ describe('ToyMapper', () => {
         expect(result.getAgeGroup()).toBe('8-12');
         expect(result.getBrand()).toBe('Hasbro');
         expect(result.getMaterial()).toBe('Plastic');
-        expect(result.getBatteryRequired()).toBe('true');
-        expect(result.getEducational()).toBe('true');
+        expect(result.getBatteryRequired()).toBe(true);
+        expect(result.getEducational()).toBe(true);
     });
 
     it('throws error if some fields are missing', () => {
@@ -66,8 +66,8 @@ describe('ToyMapper', () => {
             'AgeGroup': '8-12',
             'Brand': 'Hasbro',
             'Material': 'Plastic',
-            'BatteryRequired': true,
-            'Educational': true
+            'BatteryRequired': 'true',
+            'Educational': 'true'
         };
 
         expect(() => mapper.map(jsonInput)).toThrow();
