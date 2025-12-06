@@ -1,32 +1,16 @@
 import logger from "./util/logger";
-import { CakeOrderRepository } from "./repository/file/Cake.order.repository";
-import config from "./config";
 import { CakeBuilder, IdentifiableCakeBuilder } from "./model/builders/cake.builder";
 import { IdentifiableOrderItemBuilder, OrderBuilder } from "./model/builders/order.builder";
-import { OrderRepository } from "./repository/postgreSQL/Order.repository";
-import { BookRepository } from "./repository/postgreSQL/Book.repository";
-import { ToyRepository } from "./repository/postgreSQL/Toy.repository";
 import { BookBuilder, IdentifiableBookBuilder } from "./model/builders/book.builder";
 import { ToyBuilder, IdentifiableToyBuilder } from "./model/builders/toy.builder";
 import { DBMode, RepositoryFactory } from "./repository/Repository.factory";
 import { ItemCategory } from "./model/IItem";
 
-
 async function main() {
-    const path = config.storagePath.csv.cake;
-    const repository = new CakeOrderRepository(path);
-
-    const data = await repository.get("19");
-
-    logger.info("List of orders: \n %o", data);
-}
-
-
-async function DBSandBox() {
     // CAKE
     logger.info("========== TESTING CAKE ORDERS ==========");
     
-    const cakeRepo = await RepositoryFactory.create(DBMode.SQLITE, ItemCategory.CAKE);
+    const cakeRepo = await RepositoryFactory.create(DBMode.POSTGRESQL, ItemCategory.CAKE);
 
     const cake = CakeBuilder.newBuilder()
         .setType("Birthday")
@@ -71,9 +55,7 @@ async function DBSandBox() {
 
     // BOOK 
     logger.info("========== TESTING BOOK ORDERS ==========");
-
-    const bookOrderRepo = new OrderRepository(new BookRepository());
-    await bookOrderRepo.init();
+    const bookOrderRepo = await RepositoryFactory.create(DBMode.POSTGRESQL, ItemCategory.Book);
 
     const book = BookBuilder.newBuilder()
         .setTitle("Clean Code")
@@ -113,8 +95,7 @@ async function DBSandBox() {
     // TOY
     logger.info("========== TESTING TOY ORDERS ==========");
 
-    const toyOrderRepo = new OrderRepository(new ToyRepository());
-    await toyOrderRepo.init();
+    const toyOrderRepo = await RepositoryFactory.create(DBMode.POSTGRESQL, ItemCategory.Toy);
 
     const toy = ToyBuilder.newBuilder()
         .setType("Action Figure")
@@ -156,7 +137,4 @@ async function DBSandBox() {
     logger.info("Toy Orders: %d", allToyOrders.length);
 }
 
-
-// main();
-
-DBSandBox().catch((error) => logger.error("Error in DBSandBox", error as Error));
+main();

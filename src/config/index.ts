@@ -11,6 +11,12 @@ export default {
         csv: {
             cake: "src/data/cake-orders.csv"
         },
+        json: {
+            book: "src/data/book-orders.json"
+        },
+        xml: {
+            toy: "src/data/toy-orders.xml"
+        },
         sqlite: "src/data/orders.db",
         postgresql: process.env.DATABASE_URL || ''
         

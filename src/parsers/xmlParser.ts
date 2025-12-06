@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { XMLParser } from 'fast-xml-parser';
+import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import logger from '../util/logger';
 
 /**
@@ -20,13 +20,13 @@ export async function parseXml(filePath: string): Promise<object> {
 
     // Configure XML parser
     const parser = new XMLParser({
-      ignoreAttributes: false,          // keep attributes in parsed object
-      attributeNamePrefix: '@_',        // prefix attributes with "@_" to distinguish from tags
-      textNodeName: '#text',            // text inside tags will be under this key
-      parseTagValue: true,              // convert tag values to native types (number, boolean, etc.)
-      parseAttributeValue: true,        // convert attribute values to native types
-      trimValues: true,                 // trim spaces in values
-      isArray: (tagName) => tagName === 'person', // force 'person' elements to always be arrays
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_',
+      textNodeName: '#text',
+      parseTagValue: false,
+      parseAttributeValue: false,
+      trimValues: true,
+      isArray: (tagName) => tagName === 'row',  // ← Changed from 'order' to 'row'
     });
 
     // Parse the XML string into a JS object
@@ -42,4 +42,33 @@ export async function parseXml(filePath: string): Promise<object> {
     logger.error(`Error parsing XML file ${filePath}: ${err.message}`);
     throw err; // re-throw error for caller to handle
   }
+}
+
+/**
+ * Write a JavaScript object/array to an XML file.
+ * Handles proper formatting and structure.
+ */
+export async function writeXml(filePath: string, data: any, rootName: string = 'data'): Promise<void> {
+    try {
+        const builder = new XMLBuilder({
+            ignoreAttributes: false,
+            attributeNamePrefix: '@_',
+            textNodeName: '#text',
+            format: true,
+            indentBy: '  ',
+            suppressEmptyNode: true,
+        });
+
+        const wrappedData = { [rootName]: { row: data } };
+
+        const xmlContent = builder.build(wrappedData);
+        const xmlWithDeclaration = `<?xml version="1.0" encoding="UTF-8"?>\n${xmlContent}`;
+
+        await fs.writeFile(filePath, xmlWithDeclaration, 'utf-8');
+
+        logger.info(`Successfully wrote XML to ${filePath}`);
+    } catch (err: any) {
+        logger.error(`Error writing XML file ${filePath}: ${err.message}`);
+        throw new Error(`Failed to write XML file: ${err.message}`);
+    }
 }

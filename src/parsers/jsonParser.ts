@@ -50,3 +50,22 @@ export const parseJSON = async (filePath: string): Promise<any> => {
         throw err; // re-throw error for caller to handle
     }
 };
+
+/**
+ * Write a JavaScript object/array to a JSON file.
+ * Handles proper formatting with indentation for readability.
+ */
+export const writeJSON = async (filePath: string, data: any): Promise<void> => {
+    try {
+        // Convert JS object to formatted JSON string (2 spaces indent)
+        const jsonContent = JSON.stringify(data, null, 2);
+
+        // Write to file
+        await fs.writeFile(filePath, jsonContent, 'utf-8');
+
+        logger.info(`Successfully wrote JSON to ${filePath}`);
+    } catch (err: any) {
+        logger.error(`Error writing JSON file ${filePath}: ${err.message}`);
+        throw new Error(`Failed to write JSON file: ${err.message}`);
+    }
+};
