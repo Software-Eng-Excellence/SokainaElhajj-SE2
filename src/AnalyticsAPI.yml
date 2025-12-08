@@ -1,0 +1,148 @@
+openapi: 3.0.0
+info:
+  title: Analytics API Design
+  description: API for managing analytics
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+
+paths:
+  # 1. Total Orders
+  /analytics/orders/total:
+    get:
+      summary: Get total orders count
+      responses:
+        '200':
+          description: All orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_orders:
+                    type: integer
+                    example: 100
+
+  # 2. Orders by Category
+  /analytics/orders/by-category:
+    get:
+      summary: Get orders by item type
+      parameters:
+        - name: category
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Orders by item retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category:
+                    type: string
+                    example: "books"
+                  total_orders:
+                    type: integer
+                    example: 300
+        '404':
+          description: Category not found
+
+  # 3. Total Revenue
+  /analytics/revenue/total:
+    get:
+      summary: Get total revenue from all orders
+      responses:
+        '200':
+          description: Total revenue retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_revenue:
+                    type: number
+                    format: float
+                    example: 4070.99
+
+  # 4. Revenue by Category
+  /analytics/revenue/by-category:
+    get:
+      summary: Get revenue by item type
+      parameters:
+        - name: category
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Revenue by item retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category:
+                    type: string
+                    example: "cake"
+                  revenue:
+                    type: number
+                    example: 300.98
+        '404':
+          description: Category not found
+
+  # 5. Average Revenue
+  /analytics/revenue/average/by-category:
+    get:
+      summary: Get average revenue for a specific category
+      parameters:
+        - name: category
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Average revenue retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  category:
+                    type: string
+                    example: "cake"
+                  average_revenue:
+                    type: number
+                    format: float
+                    example: 35.50
+
+  # 6. Top Selling Items
+  /analytics/items/popular:
+    get:
+      summary: Get the most popular items ordered
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 3
+      responses:
+        '200':
+          description: Popular items retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    item_name:
+                      type: string
+                      example: "Chocolate Cake"
+                    total_sold:
+                      type: integer
+                      example: 50
