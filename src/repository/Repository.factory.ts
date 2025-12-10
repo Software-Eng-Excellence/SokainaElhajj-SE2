@@ -1,18 +1,12 @@
 import { ItemCategory } from "../model/IItem";
-import { IOrder } from "../model/IOrder";
+import { IIdentifiableOrderItem, IOrder } from "../model/IOrder";
 import { Initializable, IRepository } from "./IRepository";
-import config from "../config";
 
 // SQLite
 import { CakeRepository } from "./sqlite/Cake.order.repository";
 import { OrderRepository } from "./sqlite/Order.repository";
 import { BookRepository } from "./sqlite/Book.order.repository";
 import { ToyRepository } from "./sqlite/Toy.order.repository";
-
-// File
-import { BookOrderRepository } from "./file/Book.order.repository";
-import { ToyOrderRepository } from "./file/Toy.order.repository";
-import { CakeOrderRepository } from "./file/Cake.order.repository";
 
 // PostgreSQL
 import { OrderRepository as PostgreOrderRepository } from "./postgreSQL/Order.repository";
@@ -27,11 +21,11 @@ export enum DBMode {
 }
 
 export class RepositoryFactory {
-    public static async create(mode : DBMode, category: ItemCategory): Promise<IRepository<IOrder>> {
+    public static async create(mode : DBMode, category: ItemCategory): Promise<IRepository<IIdentifiableOrderItem>> {
 
         switch (mode) {
             case DBMode.SQLITE: 
-                let repository: IRepository<IOrder> & Initializable;
+                let repository: IRepository<IIdentifiableOrderItem> & Initializable;
                 switch (category) {
                     case ItemCategory.CAKE:
                         repository = new OrderRepository(new CakeRepository());
@@ -49,19 +43,10 @@ export class RepositoryFactory {
                 return repository;
 
             case DBMode.FILE:
-                switch (category) {
-                    case ItemCategory.CAKE:
-                        return new CakeOrderRepository(config.storagePath.csv.cake);
-                    case ItemCategory.Book:
-                        return new BookOrderRepository(config.storagePath.json.book);
-                    case ItemCategory.Toy:
-                        return new ToyOrderRepository(config.storagePath.xml.toy);
-                    default:
-                        throw new Error("Unsupported category for File");
-                }
+                throw new Error("File mode is deprecated");
 
             case DBMode.POSTGRESQL:
-                let repo: IRepository<IOrder> & Initializable;
+                let repo: IRepository<IIdentifiableOrderItem> & Initializable;
                 switch (category) {
                     case ItemCategory.CAKE:
                         repo = new PostgreOrderRepository(new PostgreCakeRepository());
