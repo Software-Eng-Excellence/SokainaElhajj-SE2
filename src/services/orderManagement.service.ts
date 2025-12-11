@@ -1,11 +1,9 @@
-import { ServiceException } from "util/exceptions/ServiceException";
-import { Order } from "../model/Order.model";
-import { generateUUID } from "../util";
-import { RepositoryFactory } from "repository/Repository.factory";
-import config from "config";
-import { IIdentifiableOrderItem } from "model/IOrder";
-import { ItemCategory } from "model/IItem";
-import { IRepository } from "repository/IRepository";
+import { ServiceException } from "../util/exceptions/ServiceException";
+import { RepositoryFactory } from "../repository/Repository.factory";
+import config from "../config";
+import { IIdentifiableOrderItem } from "../model/IOrder";
+import { ItemCategory } from "../model/IItem";
+import { IRepository } from "../repository/IRepository";
 
 export class OrderManagementService {
     // create order
