@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
-import { DBMode } from "repository/Repository.factory";
+import { DBMode } from "../repository/Repository.factory";
 
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
