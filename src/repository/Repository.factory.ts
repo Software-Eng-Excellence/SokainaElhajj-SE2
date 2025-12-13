@@ -1,5 +1,5 @@
 import { ItemCategory } from "../model/IItem";
-import { IIdentifiableOrderItem, IOrder } from "../model/IOrder";
+import { IIdentifiableOrderItem} from "../model/IOrder";
 import { Initializable, IRepository } from "./IRepository";
 
 // SQLite
@@ -13,12 +13,7 @@ import { OrderRepository as PostgreOrderRepository } from "./postgreSQL/Order.re
 import { CakeRepository as PostgreCakeRepository } from "./postgreSQL/Cake.repository";
 import { BookRepository as PostgreBookRepository } from "./postgreSQL/Book.repository";
 import { ToyRepository as PostgreToyRepository } from "./postgreSQL/Toy.repository";
-
-export enum DBMode {
-    SQLITE,
-    FILE,
-    POSTGRESQL
-}
+import { DBMode } from "../config/types";
 
 export class RepositoryFactory {
     public static async create(mode : DBMode, category: ItemCategory): Promise<IRepository<IIdentifiableOrderItem>> {

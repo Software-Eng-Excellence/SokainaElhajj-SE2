@@ -47,11 +47,11 @@ jest.mock("../../src/repository/postgreSQL/Order.repository", () => {
     };
 });
 
-import { RepositoryFactory, DBMode } from "../../src/repository/Repository.factory";
+import { RepositoryFactory } from "../../src/repository/Repository.factory";
 import { ItemCategory } from "../../src/model/IItem";
 import { OrderRepository as SqliteOrderRepository } from "../../src/repository/sqlite/Order.repository";
 import { OrderRepository as PostgreOrderRepository } from "../../src/repository/postgreSQL/Order.repository";
-
+import { DBMode } from "../../src/config/types";
 describe("RepositoryFactory", () => {
 
     describe("SQLite Mode", () => {

@@ -7,7 +7,7 @@ import cors from 'cors';
 import requestLogger from './middleware/requestLogger';
 import routes from './routes';
 import { NextFunction, Request, Response } from "express";
-import { ApiException } from './util/exceptions/ApiException';
+import { HttpException } from './util/exceptions/http/HttpException';
 
 const app = express()
 
@@ -31,16 +31,22 @@ app.use('/', routes);
 app.use((req, res) => {
     res.status(404).json({ error: "Not Found "});
 })
-
-// config error handler
+// After: Enhanced Global Error Handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    if ( err instanceof ApiException) {
-        const apiException = err as ApiException;
-        logger.error("Api Exception of status %d: %s", apiException.status, err.message);
-        res.status(apiException.status).json({ error: err.message });
+    if ( err instanceof HttpException) {
+        const httpException = err as HttpException;
+        // Log includes name, status, message, and details
+        logger.error(" %s [%d] \"%s\" %o", httpException.name, httpException.status, httpException.message, httpException.details || {});
+        // Response includes message and details
+        res.status(httpException.status).json({
+            message: httpException.message,
+            details: httpException.details || undefined
+        });
     } else {
         logger.error("Unhandled Error: %s", err.message);
-        res.status(500).json({ error: "Internal Server Error" })
+        res.status(500).json({ 
+            message: "Internal Server Error"
+        });
     }
 })
 

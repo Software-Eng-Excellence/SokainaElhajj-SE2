@@ -1,6 +1,8 @@
+import { IdentifiableOrderItem } from "model/Order.model";
 import { IdentifiableToyBuilder, ToyBuilder } from "../model/builders/toy.builder";
 import { IdentifiableToy, Toy } from "../model/Toy.model";
 import { IMapper } from "./IMapper";
+import { IIdentifiableItem } from "model/IItem";
 
 export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
     map(data: string[] | Record<string, any>): Toy {
@@ -99,5 +101,34 @@ export class DatabaseToyMapper implements IMapper<DatabaseToy, IdentifiableToy>{
             batteryRequired: data.getBatteryRequired(),
             educational: data.getEducational()
         }
+    }
+}
+
+export class JsonRequestToyMapper implements IMapper<any, IdentifiableToy> {
+    map(data: any): IdentifiableToy {
+        const toy = ToyBuilder.newBuilder()
+            .setType(data.type)
+            .setAgeGroup(data.ageGroup)
+            .setBrand(data.brand)
+            .setMaterial(data.material)
+            .setBatteryRequired(Boolean(data.batteryRequired))
+            .setEducational(Boolean(data.educational))
+            .build();
+        return IdentifiableToyBuilder.newBuilder()
+            .setToy(toy)
+            .setId(data.id)
+            .build();
+    }
+
+    reverseMap(data: IdentifiableToy): any {
+        return {
+            id: data.getId(),
+            type: data.getType(),
+            ageGroup: data.getAgeGroup(),
+            brand: data.getBrand(),
+            material: data.getMaterial(),
+            batteryRequired: data.getBatteryRequired(),
+            educational: data.getEducational()
+        };
     }
 }

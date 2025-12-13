@@ -103,3 +103,36 @@ export class DatabaseBookMapper implements IMapper<DatabaseBook, IdentifiableBoo
         };
     }
 }
+
+export class JsonRequestBookMapper implements IMapper<any, IdentifiableBook> {
+    map(data: any): IdentifiableBook {
+        const book = BookBuilder.newBuilder()
+            .setTitle(data.title)
+            .setAuthor(data.author)
+            .setGenre(data.genre)
+            .setFormat(data.format)
+            .setLanguage(data.language)
+            .setPublisher(data.publisher)
+            .setSpecialEdition(data.specialEdition)
+            .setPackaging(data.packaging)
+            .build();
+        return IdentifiableBookBuilder.newBuilder()
+            .setBook(book)
+            .setId(data.id)
+            .build();
+    }
+
+    reverseMap(data: IdentifiableBook): any {
+        return {
+            id: data.getId(),
+            title: data.getTitle(),
+            author: data.getAuthor(),
+            genre: data.getGenre(),
+            format: data.getFormat(),
+            language: data.getLanguage(),
+            publisher: data.getPublisher(),
+            specialEdition: data.getSpecialEdition(),
+            packaging: data.getPackaging()
+        };
+    }
+}

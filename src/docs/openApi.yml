@@ -1,0 +1,159 @@
+openapi: 3.0.0
+info:
+  title: Order API
+  description: API for managing orders
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+paths:
+  /orders:
+    get:
+      summary: Get all orders
+      responses:
+        '200':
+          description: A list of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      summary: Create a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+  /orders/{orderId}:
+    get:
+      summary: Get an order by ID
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+    put:
+      summary: Update an order by ID
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '200':
+          description: Order updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+    delete:
+      summary: Delete an order by ID
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Order deleted successfully
+        '404':
+          description: Order not found
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "12345"
+        category:
+          type: string
+          enum:
+            - cake
+            - toy
+            - book
+        item:
+          oneOf:
+            - $ref: '#/components/schemas/Cake'
+            # Add other item schemas here
+        quantity:
+          type: integer
+          example: 1
+        price:
+          type: number
+          format: float
+          example: 999.99
+    Cake:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "Birthday"
+        flavor:
+          type: string
+          example: "Chocolate"
+        filling:
+          type: string
+          example: "Vanilla Cream"
+        size:
+          type: number
+          example: 12
+        layers:
+          type: integer
+          example: 3
+        frostingType:
+          type: string
+          example: "Buttercream"
+        frostingFlavor:
+          type: string
+          example: "Vanilla"
+        decorationType:
+          type: string
+          example: "Sprinkles"
+        decorationColor:
+          type: string
+          example: "Rainbow"
+        customMessage:
+          type: string
+          example: "Happy Birthday!"
+        shape:
+          type: string
+          example: "Round"
+        allergies:
+          type: string
+          example: "Nuts"
+        specialIngredients:
+          type: string
+          example: "Organic Sugar"
+        packagingType:
+          type: string
+          example: "Box"
