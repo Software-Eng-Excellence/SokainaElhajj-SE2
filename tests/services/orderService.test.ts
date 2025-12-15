@@ -12,7 +12,8 @@ jest.mock("../../src/repository/Repository.factory", () => ({
 import { RepositoryFactory } from "../../src/repository/Repository.factory";
 import { ItemCategory } from "../../src/model/IItem";
 import { OrderManagementService } from "../../src/services/orderManagement.service";
-import { ServiceException } from "../../src/util/exceptions/ServiceException";
+import { BadRequestException } from "../../src/util/exceptions/http/BadRequestException";
+import { NotFoundException } from "../../src/util/exceptions/http/NotFoundException";
 
 describe("OrderManagementService", () => {
     let service: OrderManagementService;
@@ -75,7 +76,7 @@ describe("OrderManagementService", () => {
 
             await expect(service.createOrder(invalidOrder as any))
                 .rejects
-                .toThrow(ServiceException);
+                .toThrow(BadRequestException);
             
             expect(mockRepo.create).not.toHaveBeenCalled();
         });
@@ -88,7 +89,7 @@ describe("OrderManagementService", () => {
 
             await expect(service.createOrder(invalidOrder as any))
                 .rejects
-                .toThrow(ServiceException);
+                .toThrow(BadRequestException);
             
             expect(mockRepo.create).not.toHaveBeenCalled();
         });
@@ -101,7 +102,7 @@ describe("OrderManagementService", () => {
 
             await expect(service.createOrder(invalidOrder as any))
                 .rejects
-                .toThrow(ServiceException);
+                .toThrow(BadRequestException);
             
             expect(mockRepo.create).not.toHaveBeenCalled();
         });
@@ -117,15 +118,12 @@ describe("OrderManagementService", () => {
             expect(mockRepo.get).toHaveBeenCalledWith("order-123");
         });
 
-        it("should throw error when order not found", async () => {
+        it("should return null when order not found", async () => {
             mockRepo.get.mockResolvedValue(null);
 
-            await expect(service.getOrder("non-existent"))
-                .rejects
-                .toThrow(ServiceException);
+            const result = await service.getOrder("non-existent");
             
-            const numberOfCategories = Object.values(ItemCategory).length;
-            expect(mockRepo.get).toHaveBeenCalledTimes(numberOfCategories);
+            expect(result).toBeNull();
         });
     });
 
@@ -150,7 +148,7 @@ describe("OrderManagementService", () => {
 
             await expect(service.updateOrder(invalidOrder as any))
                 .rejects
-                .toThrow(ServiceException);
+                .toThrow(BadRequestException);
             
             expect(mockRepo.update).not.toHaveBeenCalled();
         });
@@ -172,7 +170,7 @@ describe("OrderManagementService", () => {
 
             await expect(service.deleteOrder("non-existent"))
                 .rejects
-                .toThrow(ServiceException);
+                .toThrow(NotFoundException);
             
             expect(mockRepo.delete).not.toHaveBeenCalled();
         });
