@@ -6,16 +6,23 @@ import { BadRequestException } from "../util/exceptions/http/BadRequestException
 
 export class OrderController {
     constructor(private readonly orderService: OrderManagementService) {}
-    // create order
+
     public async createOrder(req: Request, res: Response) {
+        // translate json to object
         const order: IdentifiableOrderItem = JsonRequestFactory.create(req.body.category).map(req.body);
-    if (!order) {
-        throw new BadRequestException("Order is required to create order", {
-            orderNotDefined: true
-        });            
-    }
+        
+        // validate input (waiter's job)
+        if (!order) {
+            throw new BadRequestException("Order is required to create order", {
+                orderNotDefined: true
+            });            
+        }
+
+        // delegate to chef (waiter)
         const newOrder = await this.orderService.createOrder(order);
-       res.status(201).json(newOrder);
+        
+        // send response
+        res.status(201).json(newOrder);
     }
 
     // get order
@@ -73,14 +80,4 @@ export class OrderController {
         res.status(204).send();
     } 
 
-    // to be implemented in assignment 9
-    // get total revenue
-    public async getTotalRevenue() {
-
-    }
-
-    // get total orders
-    public async getTotalOrders() {
-
-    }
 }

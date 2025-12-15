@@ -1,4 +1,3 @@
-// From: src/routes/order.route.ts
 import { Router } from "express";
 import { OrderController } from "../controllers/order.controller";
 import { OrderManagementService } from "../services/orderManagement.service";

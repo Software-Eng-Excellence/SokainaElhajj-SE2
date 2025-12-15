@@ -31,6 +31,8 @@ app.use('/', routes);
 app.use((req, res) => {
     res.status(404).json({ error: "Not Found "});
 })
+
+// When you define a function with 4 arguments, Express identifies it as an Error Handling Middleware, run it if you call next(error)
 // After: Enhanced Global Error Handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     if ( err instanceof HttpException) {
