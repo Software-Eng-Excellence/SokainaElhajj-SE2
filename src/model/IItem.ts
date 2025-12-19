@@ -1,4 +1,4 @@
-import { ID } from "repository/IRepository";
+import { ID } from "../repository/IRepository";
 
 export interface IItem {
     getCategory(): ItemCategory;

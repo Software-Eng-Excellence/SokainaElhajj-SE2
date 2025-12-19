@@ -1,0 +1,225 @@
+openapi: 3.0.0
+info:
+  title: User API Design
+  description: API for managing users
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+
+paths:
+  /users:
+    post:
+      tags:
+        - user
+      summary: Create a new user
+      description: Create a new user with the provided information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - user
+      summary: Get all users
+      description: Retrieve a list of all users
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{id}:
+    get:
+      tags:
+        - user
+      summary: Get user by ID
+      description: Retrieve a user by their unique ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - user
+      summary: Update user by ID
+      description: Update an existing user's information by their unique ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - user
+      summary: Delete user by ID
+      description: Delete a user by their unique ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the user
+          example: 1
+        name:
+          type: string
+          description: Name of the user
+          example: "John Doe"
+        email:
+          type: string
+          description: Email address of the user
+          example: "john@example.com"
+        password:
+          type: string
+          description: Password of the user
+          example: "password123"
+      required:
+        - id
+        - name
+        - email
+        - password
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the user
+          example: "John Doe"
+        email:
+          type: string
+          description: Email address of the user
+          example: "john@example.com"
+        password:
+          type: string
+          format: password
+          description: Password of the user
+          example: "password123"
+      required:
+        - name
+        - email
+        - password
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: "Invalid input"
+        error:
+          type: string
+          description: Detailed error description
+          example: "The provided email address is already in use."
