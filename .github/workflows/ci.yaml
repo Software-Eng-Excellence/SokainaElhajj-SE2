@@ -3,19 +3,70 @@ name: Dummy Workflow
 on:
   push:
     branches:
-      - '**'
+      - '**' # Runs on every push to any branch
 
 jobs:
-  welcome:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Welcome message
-        run: echo "Welcome to GitHub Actions!"
-      - name: List files
-        run: ls -a
-  good_bye:
+      - name: Grab the code
+        uses: actions/checkout@v4 # Fetches the latest code from GitHub
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+
+      - name: Transpile the code
+        run: npm run build
+
+      - name: Cache the built files
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-build-${{ github.sha }}
+
+  test:
     runs-on: ubuntu-latest
-    needs: welcome
+    needs: build # Runs only after 'build' succeeds
     steps:
-      - name: Goodbye message
-        run: echo "Goodbye from GitHub Actions!"
+      - name: Grab the code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Cache the coverage reports
+        uses: actions/cache@v4
+        with:
+          path: coverage
+          key: ${{ runner.os }}-coverage-${{ github.sha }}
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Grab the code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run linter
+        run: npm run lint
