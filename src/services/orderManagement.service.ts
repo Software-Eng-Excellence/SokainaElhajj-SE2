@@ -5,6 +5,7 @@ import { ItemCategory } from "../model/IItem";
 import { IRepository } from "../repository/IRepository";
 import { NotFoundException } from "../util/exceptions/http/NotFoundException";
 import { BadRequestException } from "../util/exceptions/http/BadRequestException";
+import logger from "../util/logger";
 
 export class OrderManagementService {
     // create order
@@ -24,6 +25,7 @@ export class OrderManagementService {
                 const order = await repo.get(id);
                 return order;
             } catch (error) {
+                logger.warn("Failed to get order", error);
                 // ignore the error and continue to the next category
             }
            

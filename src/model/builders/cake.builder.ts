@@ -1,4 +1,3 @@
-import { error } from "console";
 import logger from "../../util/logger";
 import { Cake, IdentifiableCake } from "../Cake.model";
 

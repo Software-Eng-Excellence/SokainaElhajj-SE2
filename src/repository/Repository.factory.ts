@@ -19,7 +19,7 @@ export class RepositoryFactory {
     public static async create(mode : DBMode, category: ItemCategory): Promise<IRepository<IIdentifiableOrderItem>> {
 
         switch (mode) {
-            case DBMode.SQLITE: 
+            case DBMode.SQLITE: {
                 let repository: IRepository<IIdentifiableOrderItem> & Initializable;
                 switch (category) {
                     case ItemCategory.CAKE:
@@ -36,11 +36,12 @@ export class RepositoryFactory {
                     }
                 await repository.init();
                 return repository;
+            }
 
             case DBMode.FILE:
                 throw new Error("File mode is deprecated");
 
-            case DBMode.POSTGRESQL:
+            case DBMode.POSTGRESQL: {
                 let repo: IRepository<IIdentifiableOrderItem> & Initializable;
                 switch (category) {
                     case ItemCategory.CAKE:
@@ -58,10 +59,11 @@ export class RepositoryFactory {
 
                 await repo.init();
                 return repo;
-                
+            }
+            
             default:
                 throw new Error("Unsupported DB mode");
         } 
-
+    
     }
 }

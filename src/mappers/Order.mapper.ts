@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IdentifiableOrderItemBuilder, OrderBuilder } from "../model/builders/order.builder";
-import { IIdentifiableOrderItem, IOrder } from "../model/IOrder";
+import { IOrder } from "../model/IOrder";
 import { IMapper } from "./IMapper";
 import { IIdentifiableItem, IItem } from "../model/IItem";
 import { IdentifiableOrderItem } from "model/Order.model";
@@ -100,7 +101,7 @@ export class JsonRequestOrderMapper implements IMapper<any, IdentifiableOrderIte
     
     constructor(private itemMapper: IMapper<any, IIdentifiableItem>) {}
 
-    map(data: any): IdentifiableOrderItem {
+    map(data: JsonOrder): IdentifiableOrderItem {
         // extract item and build identifiable item
         const item = this.itemMapper.map(data.item);
         

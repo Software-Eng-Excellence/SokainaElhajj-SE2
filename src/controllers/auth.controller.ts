@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AuthenticationService } from "../services/authentication.service";
 import { BadRequestException } from "../util/exceptions/http/BadRequestException";
 import { UserService } from "../services/userManagement.service";
-import { AuthRequest, UserPayload } from "../config/types";
+import { UserPayload } from "../config/types";
 import { toRole } from "../config/roles";
 
 export class AuthenticationController {

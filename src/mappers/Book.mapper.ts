@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BookBuilder, IdentifiableBookBuilder } from "../model/builders/book.builder";
 import { Book, IdentifiableBook } from "../model/Book.model";
 import { IMapper } from "./IMapper";

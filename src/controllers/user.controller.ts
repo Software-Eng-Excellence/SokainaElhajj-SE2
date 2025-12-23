@@ -38,6 +38,7 @@ export class UserController {
                 const createUser = await this.userService.getUserById(userId);
                 res.status(201).json(createUser);
             } catch (err) {
+                logger.warn("Failed to retrieve user after creation:", err);
                 res.status(201).json({ message: "User created but failed to retrieve", id: userId });
             }
         } catch (error) {
@@ -67,6 +68,7 @@ export class UserController {
             const users = await this.userService.getAllUsers();
             res.status(200).json(users);
         } catch (error) {
+            logger.error("Failed to retrieve users:", error);
             throw new ServiceException("Error fetching users");
         }
     }

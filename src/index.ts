@@ -1,12 +1,12 @@
 import config from './config';
-import express, { request } from 'express';
+import express from 'express';
 import logger from './util/logger';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import requestLogger from './middleware/requestLogger';
 import routes from './routes';
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { HttpException } from './util/exceptions/http/HttpException';
 import cookieParser from 'cookie-parser';
 
@@ -38,7 +38,7 @@ app.use((req, res) => {
 
 // When you define a function with 4 arguments, Express identifies it as an Error Handling Middleware, run it if you call next(error)
 // After: Enhanced Global Error Handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response) => {
     if ( err instanceof HttpException) {
         const httpException = err as HttpException;
         // Log includes name, status, message, and details

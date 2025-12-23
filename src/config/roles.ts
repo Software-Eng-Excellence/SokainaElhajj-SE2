@@ -24,7 +24,7 @@ type RolePermission = {
     [key in ROLE] : Permission[]
 }
 
-export const rolePermission = {
+export const rolePermission: RolePermission = {
     [ROLE.admin]: [ ...Object.values(Permission) ],
     [ROLE.user]: [
         Permission.WRITE_ORDER, // Users can create orders

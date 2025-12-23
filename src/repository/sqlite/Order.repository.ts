@@ -64,7 +64,9 @@ export class OrderRepository implements IRepository<IIdentifiableOrderItem>, Ini
 
         } catch (error: unknown) {
             logger.error("Failed to create order", error as Error);
-            conn && conn.exec("ROLLBACK");
+            if (conn) {
+                conn.exec("ROLLBACK");
+            }
             throw new DbException("Failed to create order", error as Error);
         }
     }
@@ -131,7 +133,9 @@ export class OrderRepository implements IRepository<IIdentifiableOrderItem>, Ini
             conn.exec("COMMIT");
         } catch (error: unknown) {
             logger.error("Failed to update order of id %s %o", order.getId(), error as Error);
-            conn && conn.exec("ROLLBACK");
+            if (conn) {
+                conn.exec("ROLLBACK");
+            }            
             throw new DbException("Failed to update order of id " + order.getId(), error as Error);
         }
     }
@@ -148,7 +152,9 @@ export class OrderRepository implements IRepository<IIdentifiableOrderItem>, Ini
             conn.exec("COMMIT");
         } catch (error: unknown) {
             logger.error("Failed to delete order", error as Error);
-            conn && conn.exec("ROLLBACK");
+            if (conn) {
+                conn.exec("ROLLBACK");
+            }            
             throw new DbException("Failed to delete order", error as Error);
         }
     }

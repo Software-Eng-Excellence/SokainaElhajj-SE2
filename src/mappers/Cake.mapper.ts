@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CakeBuilder, IdentifiableCakeBuilder } from "../model/builders/cake.builder";
 import { Cake, IdentifiableCake } from "../model/Cake.model";
 import { IMapper } from "./IMapper";

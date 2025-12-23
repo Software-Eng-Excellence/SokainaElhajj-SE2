@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrderRepository } from "./Order.repository"
 import { OrderMapper } from "../../mappers/Order.mapper";
 import { ToyMapper } from "../../mappers/Toy.mapper";

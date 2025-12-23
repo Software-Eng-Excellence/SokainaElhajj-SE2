@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/parsers/jsonParser.ts
 import fs from 'fs/promises';
 import logger from '../util/logger';

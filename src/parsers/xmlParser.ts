@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { promises as fs } from 'fs';
 import { XMLBuilder, XMLParser } from 'fast-xml-parser';
 import logger from '../util/logger';

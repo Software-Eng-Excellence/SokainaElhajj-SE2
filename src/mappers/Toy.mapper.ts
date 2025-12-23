@@ -1,8 +1,7 @@
-import { IdentifiableOrderItem } from "model/Order.model";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IdentifiableToyBuilder, ToyBuilder } from "../model/builders/toy.builder";
 import { IdentifiableToy, Toy } from "../model/Toy.model";
 import { IMapper } from "./IMapper";
-import { IIdentifiableItem } from "model/IItem";
 
 export class ToyMapper implements IMapper<string[] | Record<string, any>, Toy> {
     map(data: string[] | Record<string, any>): Toy {

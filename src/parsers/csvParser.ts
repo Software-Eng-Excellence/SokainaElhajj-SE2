@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/parsers/csvParser.ts
 import fs from 'fs';
 import { parse } from 'csv-parse';

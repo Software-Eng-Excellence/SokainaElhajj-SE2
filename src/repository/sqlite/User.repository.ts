@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { User } from "../../model/User.model";
 import { id, InitializableRepository } from "../IRepository";
-import { DbException, InitializationException } from "../../util/exceptions/repositoryExceptions";
+import { InitializationException } from "../../util/exceptions/repositoryExceptions";
 import logger from "../../util/logger";
 import { ConnectionManager } from "./ConnectionManager";
 import { Database } from "sqlite";

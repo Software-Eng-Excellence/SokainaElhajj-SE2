@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IdentifiableBook } from "../../model/Book.model";
 import { ItemCategory } from "../../model/IItem";
 import { id, Initializable, IRepository } from "../IRepository";

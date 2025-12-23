@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IIdentifiableOrderItem } from "../../model/IOrder";
 import { id, Initializable, IRepository } from "../IRepository";
 import { DbException, InitializationException, ItemNotFoundException } from "../../util/exceptions/repositoryExceptions";
