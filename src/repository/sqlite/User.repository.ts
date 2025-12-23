@@ -4,6 +4,7 @@ import { DbException, InitializationException } from "../../util/exceptions/repo
 import logger from "../../util/logger";
 import { ConnectionManager } from "./ConnectionManager";
 import { Database } from "sqlite";
+import { toRole } from "../../config/roles";
 
 
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS users (
@@ -13,19 +14,42 @@ const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY
 )`;
 
-const INSERT_USER = `INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)`;
+const INSERT_USER = `INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)`;
 const SELECT_BY_ID = `SELECT * FROM users WHERE id = ?`;
 const SELECT_ALL = `SELECT * FROM users`;
-const UPDATE_USER = `UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?`;
+const UPDATE_USER = `UPDATE users SET name = ?, email = ?, password = ?, role = ? WHERE id = ?`;
 const DELETE_USER = `DELETE FROM users WHERE id = ?`;
 
 export class UserRepository implements InitializableRepository<User> {
     private db: Database | null = null;
     
+    // async init(): Promise<void> {
+    //     try {
+    //         this.db = await ConnectionManager.getConnection();
+    //         await this.db.exec(CREATE_TABLE);
+    //         await this.db.exec(`
+    //             ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';                
+    //         `);
+    //         logger.info("User table initialized");
+    //     } catch (error: unknown) {
+    //         logger.error("Failed to initialize User table", error as Error);
+    //         throw new InitializationException("Failed to initialize User table", error as Error);
+    //     }
+    // }
+
     async init(): Promise<void> {
         try {
             this.db = await ConnectionManager.getConnection();
             await this.db.exec(CREATE_TABLE);
+            
+            // Check if role column exists
+            const tableInfo = await this.db.all(`PRAGMA table_info(users)`);
+            const hasRoleColumn = tableInfo.some((col: any) => col.name === 'role');
+            
+            if (!hasRoleColumn) {
+                await this.db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`);
+            }
+            
             logger.info("User table initialized");
         } catch (error: unknown) {
             logger.error("Failed to initialize User table", error as Error);
@@ -39,7 +63,7 @@ export class UserRepository implements InitializableRepository<User> {
         }
         try {
             const userId = user.id;
-            await this.db.run(INSERT_USER, userId, user.name, user.email, user.password);
+            await this.db.run(INSERT_USER, userId, user.name, user.email, user.password, user.role);
             return userId;
         } catch (error) {
             throw new Error(`Failed to create user: ${(error as Error).message}`);
@@ -56,7 +80,8 @@ export class UserRepository implements InitializableRepository<User> {
             if (!user) {
                 throw new Error("User not found");
             }
-                return new User(user.name, user.email, user.password, user.id);        } catch (error: unknown) {
+                return new User(user.name, user.email, user.password, user.id, toRole(user.role));        
+        } catch (error: unknown) {
             if ((error as Error).message === "User not found") {
                 throw error;
             }
@@ -70,7 +95,7 @@ export class UserRepository implements InitializableRepository<User> {
         }
         try {
             const rows = await this.db.all(SELECT_ALL);
-            return rows.map(user => new User(user.name, user.email, user.password, user.id));        } catch (error: unknown) {
+            return rows.map(user => new User(user.name, user.email, user.password, user.id, toRole(user.role)));        } catch (error: unknown) {
             throw new Error("Failed to get all users: " + (error as Error).message);
         }
     }
@@ -81,7 +106,7 @@ export class UserRepository implements InitializableRepository<User> {
         }
         try {
             const userId = user.getId();
-            const result = await this.db.run(UPDATE_USER, user.name, user.email, user.password, userId);
+            const result = await this.db.run(UPDATE_USER, user.name, user.email, user.password, user.role, userId);
             if (result.changes === 0) {
                 throw new Error("User not found");
             }
@@ -108,6 +133,23 @@ export class UserRepository implements InitializableRepository<User> {
             }
             throw new Error("Failed to delete user of id " + id + ": " + (error as Error).message);
         }
+    }
+
+    async getByEmail(email: string): Promise<User> {
+        if (!this.db) {
+            throw new Error('Database not initialized');
+        }
+
+        const user = await this.db.get('SELECT * FROM users WHERE email = ?', email);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return new User (
+            user.name,
+            user.email,
+            user.password,
+            user.id
+        );
     }
 }
 

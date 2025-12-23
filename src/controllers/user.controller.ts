@@ -6,6 +6,7 @@ import { generateUUID } from "../util/index";
 import { NotFoundException } from "../util/exceptions/http/NotFoundException";
 import { ServiceException } from "../util/exceptions/http/ServiceException";
 import logger from "../util/logger";
+import { toRole } from "../config/roles";
 
 export class UserController {
     constructor(private readonly userService: UserService) {}
@@ -30,7 +31,7 @@ export class UserController {
                 throw new BadRequestException("Invalid email format");
             }
 
-            const newUser = new User(name, email, password, generateUUID("user"));
+            const newUser = new User(name, email, password, generateUUID("user"), toRole('user'));
             const userId = await this.userService.createUser(newUser);
 
             try {
@@ -98,7 +99,8 @@ export class UserController {
                 name || existingUser.name,
                 email || existingUser.email,
                 password || existingUser.password,
-                id
+                id,
+                toRole(existingUser.role)
             );
 
             await this.userService.updateUser(updatedUser);
