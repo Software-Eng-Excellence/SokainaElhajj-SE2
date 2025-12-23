@@ -12,7 +12,7 @@ export default {
     NODE_ENV: env, // Checks if the environment type (e.g., 'production' or 'development') is set; if not, it uses 'development' as default.
     isDev: env === 'development',
     isProduction: env === 'production',
-    logDir: './logs', // Specifies the folder where log files will be saved.
+    logDir: process.env.LOG_DIR || './logs', // Specifies the folder where log files will be saved.
     storagePath: {
         csv: {
             cake: "src/data/cake-orders.csv"

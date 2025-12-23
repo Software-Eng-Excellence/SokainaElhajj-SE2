@@ -4,11 +4,11 @@ import path from 'path';
 import config from '../config'
 
 const isDev = config.NODE_ENV === 'development';
-const logDir = config.logDir;
+const logDir = config.logDir || './logs';
 
 // Ensure log directory exists
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 // Define log formats
