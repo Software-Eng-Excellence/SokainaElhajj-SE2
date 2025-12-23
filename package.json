@@ -7,7 +7,7 @@
     "clean": "rimraf build",
     "prebuild": "npm run clean && npm run lint",
     "build": "tsc",
-    "postbuild": "powershell -Command \"$sum=(Get-ChildItem -Recurse build -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum; $mb=$sum/1MB; Write-Host ('Finished build with size: {0:N2} MB' -f $mb)\"",
+    "postbuild": "node -e \"const fs=require('fs');const getAllFiles=d=>fs.readdirSync(d).reduce((acc,f)=>{const p=require('path').join(d,f);return acc.concat(fs.statSync(p).isDirectory()?getAllFiles(p):p)},[]);const size=getAllFiles('build').reduce((s,f)=>s+fs.statSync(f).size,0);console.log(`Finished build with size: ${(size/1024/1024).toFixed(2)} MB`)\"",
     "prestart": "npm run build",
     "start": "ts-node src/index.ts",
     "dev": "ts-node-dev --respawn src/index.ts",
