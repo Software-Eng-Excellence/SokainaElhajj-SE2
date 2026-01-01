@@ -3,6 +3,7 @@ import { OrderRepository } from "../../../src/repository/postgreSQL/Order.reposi
 import { IIdentifiableOrderItem } from "../../../src/model/IOrder";
 import { IRepository } from "../../../src/repository/IRepository";
 import { DbException, InitializationException, ItemNotFoundException } from "../../../src/util/exceptions/repositoryExceptions";
+import { PostgreSQLConnectionManager } from "../../../src/repository/postgreSQL/PostgreSQLConnectionManager";
 
 const mockClient = {
     query: jest.fn(),
@@ -16,7 +17,11 @@ const mockPool = {
 
 jest.mock("../../../src/repository/postgreSQL/PostgreSQLConnectionManager", () => ({
     PostgreSQLConnectionManager: {
-        getPool: jest.fn(() => mockPool)
+        getPool: jest.fn(() => mockPool),
+        // Simply execute the callback
+        runInTransaction: jest.fn(async (callback) => await callback()),
+        // Execute the callback and provide the mockClient
+        runQuery: jest.fn(async (callback) => await callback(mockClient))
     }
 }));
 
@@ -90,11 +95,8 @@ describe("Order Repository Unit Tests", () => {
             const result = await repo.create(dummyOrder);
 
             expect(result).toBe('order-999');
-            expect(mockClient.query).toHaveBeenCalledWith('BEGIN'); 
-            expect(mockItemRepo.create).toHaveBeenCalledWith(dummyItem, mockClient); 
+            expect(mockItemRepo.create).toHaveBeenCalledWith(dummyItem); 
             expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO "order"'), expect.any(Array));
-            expect(mockClient.query).toHaveBeenCalledWith('COMMIT');  
-            expect(mockClient.release).toHaveBeenCalled(); 
         });
 
         it('should ROLLBACK everything if the database fails', async () => {
@@ -111,9 +113,6 @@ describe("Order Repository Unit Tests", () => {
             });
 
             await expect(repo.create(dummyOrder)).rejects.toThrow(DbException);
-
-            expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
-            expect(mockClient.release).toHaveBeenCalled();
         }); 
     });
 
@@ -134,16 +133,13 @@ describe("Order Repository Unit Tests", () => {
 
             expect(result.getId()).toBe('order-999');
             expect(result.getItem()).toBe(dummyItem); 
-            expect(mockItemRepo.get).toHaveBeenCalledWith('item-123', mockClient); 
-            expect(mockClient.release).toHaveBeenCalled();
+            expect(mockItemRepo.get).toHaveBeenCalledWith('item-123'); 
         });
 
         it('should throw ItemNotFoundException if order does not exist', async () => {
             mockClient.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
             await expect(repo.get('missing-id')).rejects.toThrow(ItemNotFoundException);
-            
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -166,7 +162,6 @@ describe("Order Repository Unit Tests", () => {
             expect(results.length).toBe(2);
             expect(results[0].getId()).toBe('o1');
             expect(results[0].getItem().getId()).toBe('i1');
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should return empty array if no items exist', async () => {
@@ -176,7 +171,6 @@ describe("Order Repository Unit Tests", () => {
 
             expect(results).toEqual([]);
             expect(mockClient.query).not.toHaveBeenCalled();
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -186,11 +180,8 @@ describe("Order Repository Unit Tests", () => {
 
             await repo.update(dummyOrder);
 
-            expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
-            expect(mockItemRepo.update).toHaveBeenCalledWith(dummyOrder.getItem(), mockClient);
+            expect(mockItemRepo.update).toHaveBeenCalledWith(dummyOrder.getItem());
             expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE "order"'), expect.any(Array));
-            expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw ItemNotFoundException if ID does not exist', async () => {
@@ -204,106 +195,54 @@ describe("Order Repository Unit Tests", () => {
             });
 
             await expect(repo.update(dummyOrder)).rejects.toThrow(ItemNotFoundException);
-
-            expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
     describe('delete', () => {
         it('should delete order and its item successfully', async () => {
+            // 1. Mock the SELECT to find the item
+            // 2. Mock the DELETE for the order
             mockClient.query
-                .mockResolvedValueOnce({})
                 .mockResolvedValueOnce({ rows: [{ item_id: 'item-123' }], rowCount: 1 }) 
-                .mockResolvedValueOnce({ rowCount: 1 }) 
-                .mockResolvedValueOnce({}); 
+                .mockResolvedValueOnce({ rowCount: 1 });
 
             await repo.delete('order-999');
 
-            expect(mockItemRepo.delete).toHaveBeenCalledWith('item-123', mockClient);
+            expect(mockItemRepo.delete).toHaveBeenCalledWith('item-123');
             expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM "order"'), expect.any(Array));
-            expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
         });
 
         it('should throw ItemNotFoundException if order to delete is missing', async () => {
-            mockClient.query.mockReset();
-            mockClient.query
-                .mockResolvedValueOnce({}) 
-                .mockResolvedValueOnce({ rows: [], rowCount: 0 }); 
+            // Ensure the query returns a valid object structure but with 0 rows
+            mockClient.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
             await expect(repo.delete('missing-id')).rejects.toThrow(ItemNotFoundException);
-            
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
-    
+
     describe('Edge Cases', () => {
         it('should wrap database errors in DbException', async () => {
-            mockClient.query.mockRejectedValue(new Error('connection lost'));
+            // Use mockImplementationOnce to ensure this specific call fails immediately
+            mockClient.query.mockImplementationOnce(() => {
+                throw new Error('connection lost');
+            });
 
+            // We use repo.get or repo.delete; if the DB fails, it must be a DbException
             await expect(repo.get("order-999")).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
-        it('should not release client when passed externally', async () => {
-            const rawRow = { 
-                id: 'order-999', 
-                quantity: 5, 
-                price: 100, 
-                item_category: 'cake', 
-                item_id: 'item-123' 
-            };
-            mockClient.query.mockResolvedValue({ rows: [rawRow], rowCount: 1 });
-            mockItemRepo.get.mockResolvedValue(dummyItem);
-
-            await repo.get("order-999", mockClient);
-
-            expect(mockClient.release).not.toHaveBeenCalled();
         });
 
         it('should propagate connection pool failure', async () => {
-            (mockPool.connect as jest.Mock).mockRejectedValue(
-                new Error('pool exhausted')
-            );
+            // We mock the Manager directly here because that's where the pool lives
+            (PostgreSQLConnectionManager.runQuery as jest.Mock).mockRejectedValueOnce(new Error('pool exhausted'));
 
-            await expect(repo.create(dummyOrder)).rejects.toThrow('pool exhausted');
+            await expect(repo.getAll()).rejects.toThrow('pool exhausted');
         });
 
-        it('should ROLLBACK on duplicate entry', async () => {
-            mockItemRepo.create.mockResolvedValue('item-123');
-            mockClient.query.mockImplementation((sql) => {
-                if (sql === 'BEGIN') return Promise.resolve();
-                if (sql === 'ROLLBACK') return Promise.resolve();
-                return Promise.reject(new Error('duplicate key value violates unique constraint'));
-            });
+        it('should throw DbException if itemRepository fails during creation', async () => {
+            mockItemRepo.create.mockRejectedValue(new Error('ItemRepo Crash'));
 
+            // If the dependency fails, the OrderRepo should wrap it in a DbException
             await expect(repo.create(dummyOrder)).rejects.toThrow(DbException);
-            expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
-        it('should ROLLBACK on null constraint violation', async () => {
-            mockItemRepo.create.mockResolvedValue('item-123');
-            mockClient.query.mockImplementation((sql) => {
-                if (sql === 'BEGIN') return Promise.resolve();
-                if (sql === 'ROLLBACK') return Promise.resolve();
-                return Promise.reject(new Error('null value violates not-null constraint'));
-            });
-
-            await expect(repo.create(dummyOrder)).rejects.toThrow(DbException);
-            expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
-        it('should ROLLBACK if itemRepository fails', async () => {
-            (mockPool.connect as jest.Mock).mockResolvedValue(mockClient);
-            mockClient.query.mockResolvedValue({});
-            mockItemRepo.create.mockRejectedValue(new Error('ItemRepo Error'));
-
-            await expect(repo.create(dummyOrder)).rejects.toThrow(DbException);
-            expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
-            expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 });
