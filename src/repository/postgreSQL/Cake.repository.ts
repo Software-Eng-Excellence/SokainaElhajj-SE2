@@ -4,7 +4,6 @@ import { DbException, InitializationException, ItemNotFoundException } from "../
 import logger from "../../util/logger";
 import { PostgreSQLConnectionManager } from "./PostgreSQLConnectionManager";
 import { IdentifiableCake } from "../../model/Cake.model";
-import { PoolClient } from "pg";
 import { DatabaseCakeMapper, DatabaseCake } from "../../mappers/Cake.mapper";
 
 const tableName = ItemCategory.CAKE;
@@ -70,157 +69,127 @@ export class CakeRepository implements IRepository<IdentifiableCake>, Initializa
         }
     }
     
-    async create(item: IdentifiableCake, client?: any): Promise<id> {
-        const pool = PostgreSQLConnectionManager.getPool(); 
-        const dbClient = (client as PoolClient) ?? await pool.connect(); 
-        const shouldRelease = !client; 
-    
-        try {
-            await dbClient.query(INSERT_CAKE, [
-                item.getId(),
-                item.getType(),
-                item.getFlavor(),
-                item.getFilling(),
-                item.getSize(),
-                item.getLayers(),
-                item.getFrostingType(),
-                item.getFrostingFlavor(),
-                item.getDecorationType(),
-                item.getDecorationColor(),
-                item.getCustomMessage(),
-                item.getShape(),
-                item.getAllergies(),
-                item.getSpecialIngredients(),
-                item.getPackagingType()            
-            ]);
-            logger.info("Created cake with id %s", item.getId());
-            return item.getId();
-        } catch (error: unknown) {
-            logger.error("Failed to create cake", error as Error);
-            throw new DbException("Failed to create cake", error as Error);
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
+    async create(item: IdentifiableCake): Promise<id> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                await client.query(INSERT_CAKE, [
+                    item.getId(),
+                    item.getType(),
+                    item.getFlavor(),
+                    item.getFilling(),
+                    item.getSize(),
+                    item.getLayers(),
+                    item.getFrostingType(),
+                    item.getFrostingFlavor(),
+                    item.getDecorationType(),
+                    item.getDecorationColor(),
+                    item.getCustomMessage(),
+                    item.getShape(),
+                    item.getAllergies(),
+                    item.getSpecialIngredients(),
+                    item.getPackagingType()            
+                ]);
+                logger.info("Created cake with id %s", item.getId());
+                return item.getId();
+            } catch (error: unknown) {
+                logger.error("Failed to create cake", error as Error);
+                throw new DbException("Failed to create cake", error as Error);
             }
-        }
+        });
     }
 
-    async get(id: id, client?: any): Promise<IdentifiableCake> {
-        const pool = PostgreSQLConnectionManager.getPool(); 
-        const dbClient = (client as PoolClient) ?? await pool.connect(); 
-        const shouldRelease = !client;
-    
-        try {
-            const result = await dbClient.query(SELECT_BY_ID, [id]);
+    async get(id: id): Promise<IdentifiableCake> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(SELECT_BY_ID, [id]);
 
-            if (result.rows.length === 0) {
-                throw new ItemNotFoundException("Cake of id " + id + " not found");
-            }
-            
-            const row = result.rows[0];
-            return new DatabaseCakeMapper().map(row);
+                if (result.rows.length === 0) {
+                    throw new ItemNotFoundException("Cake of id " + id + " not found");
+                }
+                
+                return new DatabaseCakeMapper().map(result.rows[0]);
 
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+                
+                logger.error("Failed to get cake", error as Error);
+                throw new DbException("Failed to get cake", error as Error);
             }
-            
-            logger.error("Failed to get cake", error as Error);
-            throw new DbException("Failed to get cake", error as Error);
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
+        });
     }
 
-    async getAll(client?: any): Promise<IdentifiableCake[]> {
-        const pool = PostgreSQLConnectionManager.getPool(); 
-        const dbClient = (client as PoolClient) ?? await pool.connect(); 
-        const shouldRelease = !client;
-    
-        try {
-            const result = await dbClient.query(SELECT_ALL);
-            const mapper = new DatabaseCakeMapper();
+    async getAll(): Promise<IdentifiableCake[]> {
+         return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(SELECT_ALL);
+                const mapper = new DatabaseCakeMapper();
 
-            return result.rows.map((row) => mapper.map(row as DatabaseCake));
-            
-        } catch (error: unknown) {
-            logger.error("Failed to get all cakes", error as Error);
-            throw new DbException("Failed to get all cakes", error as Error);
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
+                return result.rows.map((row) => mapper.map(row as DatabaseCake));
+                
+            } catch (error: unknown) {
+                logger.error("Failed to get all cakes", error as Error);
+                throw new DbException("Failed to get all cakes", error as Error);
             }
-        }    
+        });
     }
 
-    async update(item: IdentifiableCake, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
+    async update(item: IdentifiableCake): Promise<void> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(UPDATE_ID, [
+                    item.getType(),
+                    item.getFlavor(),
+                    item.getFilling(),
+                    item.getSize(),
+                    item.getLayers(),
+                    item.getFrostingType(),
+                    item.getFrostingFlavor(),
+                    item.getDecorationType(),
+                    item.getDecorationColor(),
+                    item.getCustomMessage(),
+                    item.getShape(),
+                    item.getAllergies(),
+                    item.getSpecialIngredients(),
+                    item.getPackagingType(), 
+                    item.getId()
+                ]);
 
-        try {
-            const result = await dbClient.query(UPDATE_ID, [
-                item.getType(),
-                item.getFlavor(),
-                item.getFilling(),
-                item.getSize(),
-                item.getLayers(),
-                item.getFrostingType(),
-                item.getFrostingFlavor(),
-                item.getDecorationType(),
-                item.getDecorationColor(),
-                item.getCustomMessage(),
-                item.getShape(),
-                item.getAllergies(),
-                item.getSpecialIngredients(),
-                item.getPackagingType(), 
-                item.getId()
-            ])
+                if (result.rowCount === 0) {
+                    throw new ItemNotFoundException("Item of id " + item.getId() + " not found");
+                }
+                
+                logger.info("Updated cake Successfully");
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
 
-            if (result.rowCount === 0) {
-                throw new ItemNotFoundException("Item of id " + item.getId() + " not found");
+                logger.error("Failed to update cake", error as Error);
+                throw new DbException("Failed to update cake", error as Error);
             }
-            
-            logger.info("Updated cake Successfully");
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
-            }
-
-            logger.error("Failed to update cake", error as Error);
-            throw new DbException("Failed to update cake", error as Error);
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
+        });
     }
-    async delete(id: id, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
 
-        try {
-            const result = await dbClient.query(DELETE_ID, [id]);
+    async delete(id: id): Promise<void> {
+       return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(DELETE_ID, [id]);
 
-            if (result.rowCount === 0) {
-                throw new ItemNotFoundException("Cake of id " + id + " not found");
+                if (result.rowCount === 0) {
+                    throw new ItemNotFoundException("Cake of id " + id + " not found");
+                }
+
+                logger.info("Deleted cake with id %s", id);
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+
+                logger.error("Failed to delete cake", error as Error);
+                throw new DbException("Failed to delete cake", error as Error);
             }
-
-            logger.info("Deleted cake with id %s", id);
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
-            }
-
-            logger.error("Failed to delete cake", error as Error);
-            throw new DbException("Failed to delete cake", error as Error);
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }    
+        });
     }
 }

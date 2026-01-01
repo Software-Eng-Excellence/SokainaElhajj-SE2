@@ -1,3 +1,4 @@
+import { PostgreSQLConnectionManager } from "../../../src/repository/postgreSQL/PostgreSQLConnectionManager";
 import { IdentifiableCake } from "../../../src/model/Cake.model";
 import { CakeRepository } from "../../../src/repository/postgreSQL/Cake.repository";
 import { DbException, InitializationException, ItemNotFoundException } from "../../../src/util/exceptions/repositoryExceptions";
@@ -12,9 +13,11 @@ const mockPool = {
     query: jest.fn()
 };
 
-jest.mock("../../../src/repository/postgreSQL/PostgreSQLConnectionManager" , () => ({
+jest.mock("../../../src/repository/postgreSQL/PostgreSQLConnectionManager", () => ({
     PostgreSQLConnectionManager: {
-        getPool: jest.fn(() => mockPool)
+        getPool: jest.fn(() => mockPool),
+        // This is the CRITICAL part: it takes the repo's callback and runs it immediately
+        runQuery: jest.fn(async (callback) => await callback(mockClient))
     }
 }));
 
@@ -92,7 +95,6 @@ describe("Cake Repository - Unit Tests", () => {
                 expect.stringContaining('INSERT INTO'),
                 expect.arrayContaining(["cake-1", "sponge", "vanilla"])
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -107,14 +109,12 @@ describe("Cake Repository - Unit Tests", () => {
                 expect.stringContaining('SELECT'),
                 ["cake-1"]
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it("should throw ItemNotFoundException when not found", async () => {
             mockClient.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
             await expect(repo.get("missing")).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -128,7 +128,6 @@ describe("Cake Repository - Unit Tests", () => {
             expect(results).toHaveLength(2);
             expect(results[0].getId()).toBe("cake-1");
             expect(results[1].getId()).toBe("cake-2");
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should return empty array when none exist', async () => {
@@ -137,7 +136,6 @@ describe("Cake Repository - Unit Tests", () => {
             const results = await repo.getAll();
 
             expect(results).toEqual([]);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -150,14 +148,12 @@ describe("Cake Repository - Unit Tests", () => {
                 expect.stringContaining('UPDATE'),
                 expect.arrayContaining(["sponge", "vanilla", "cake-1"])
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw ItemNotFoundException when not found', async () => {
             mockClient.query.mockResolvedValue({ rowCount: 0 });
 
             await expect(repo.update(dummyCake)).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -170,66 +166,45 @@ describe("Cake Repository - Unit Tests", () => {
                 expect.stringContaining('DELETE'),
                 ["cake-1"]
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw ItemNotFoundException when not found', async () => {
             mockClient.query.mockResolvedValue({ rowCount: 0 });
 
             await expect(repo.delete("missing")).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
-     describe('Edge Cases', () => {
+    describe('Edge Cases', () => {
         it('should wrap database errors in DbException', async () => {
             mockClient.query.mockRejectedValue(new Error('connection lost'));
-
             await expect(repo.get("cake-1")).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
-        it('should not release client when passed externally', async () => {
-            mockClient.query.mockResolvedValue({ rows: [rawCakeRow], rowCount: 1 });
-
-            await repo.get("cake-1", mockClient);
-
-            expect(mockClient.release).not.toHaveBeenCalled();
-        });
+        // DELETE the "should not release client when passed externally" test entirely.
 
         it('should propagate connection pool failure', async () => {
-            (mockPool.connect as jest.Mock).mockRejectedValue(
+            // Force the Manager itself to fail before the repo logic starts
+            (PostgreSQLConnectionManager.runQuery as jest.Mock).mockRejectedValueOnce(
                 new Error('pool exhausted')
             );
 
             await expect(repo.create(dummyCake)).rejects.toThrow('pool exhausted');
         });
 
-        it('should always release connection on error', async () => {
-            mockClient.query.mockRejectedValue(new Error('unexpected'));
-
-            await expect(repo.delete("cake-1")).rejects.toThrow();
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
         it('should throw DbException on invalid data type', async () => {
-            mockClient.query.mockRejectedValue(
-                new Error('invalid input syntax for type integer: "not-a-number"')
-            );
+            mockClient.query.mockRejectedValue(new Error('invalid input syntax'));
 
             const cakeWithBadSize = {
                 ...dummyCake,
-                getSize: () => "not-a-number"  // Should be integer
+                getSize: () => "not-a-number"
             } as unknown as IdentifiableCake;
 
             await expect(repo.create(cakeWithBadSize)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw DbException when inserting null required fields', async () => {
-            mockClient.query.mockRejectedValue(
-                new Error('null value in column "type" violates not-null constraint')
-            );
+            mockClient.query.mockRejectedValue(new Error('null value violates constraint'));
 
             const cakeWithNull = {
                 ...dummyCake,
@@ -237,16 +212,11 @@ describe("Cake Repository - Unit Tests", () => {
             } as unknown as IdentifiableCake;
 
             await expect(repo.create(cakeWithNull)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw DbException on duplicate entry', async () => {
-            mockClient.query.mockRejectedValue(
-                new Error('duplicate key value violates unique constraint')
-            );
-
+            mockClient.query.mockRejectedValue(new Error('duplicate key'));
             await expect(repo.create(dummyCake)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 });
