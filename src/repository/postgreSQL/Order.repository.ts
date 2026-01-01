@@ -5,7 +5,6 @@ import { DbException, InitializationException, ItemNotFoundException } from "../
 import logger from "../../util/logger";
 import { IIdentifiableItem } from "../../model/IItem";
 import { PostgreSQLConnectionManager } from "./PostgreSQLConnectionManager";
-import { PoolClient } from "pg";
 import { DatabaseOrderMapper } from "../../mappers/Order.mapper";
 
 const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS "order" (
@@ -49,229 +48,154 @@ export class OrderRepository implements IRepository<IIdentifiableOrderItem>, Ini
         }
     }
 
-    async create(order: IIdentifiableOrderItem, client?: any): Promise<id> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        // use existing client if provided, or create new one
-        const dbClient = (client as PoolClient) ?? await pool.connect();        
-        // if there's no client, we must handle transaction
-        const shouldManageTransaction = !client;
+    async create(order: IIdentifiableOrderItem): Promise<id> {
+        return await PostgreSQLConnectionManager.runInTransaction(async () => {
+            try {
+                // create the item
+                const item_id = await this.itemRepository.create(order.getItem());
 
-        try {
-            if (shouldManageTransaction) {
-                await dbClient.query('BEGIN');
-            }
+                // Execute query within transaction
+                await PostgreSQLConnectionManager.runQuery(async (client) => {
+                    await client.query(INSERT_ORDER, [
+                        order.getId(),
+                        order.getQuantity(),
+                        order.getPrice(),
+                        order.getItem().getCategory(),
+                        item_id
+                    ]);
+                });
 
-            // create the item
-            const item_id = await this.itemRepository.create(order.getItem(), dbClient);
+                logger.info("Created order with id %s", order.getId());
+                return order.getId();
 
-            // insert order
-            await dbClient.query(INSERT_ORDER, [
-                order.getId(),
-                order.getQuantity(),
-                order.getPrice(),
-                order.getItem().getCategory(),
-                item_id
-            ]);
-
-            if (shouldManageTransaction) {
-                await dbClient.query('COMMIT');
-            }
-
-            logger.info("Created order with id %s", order.getId());
-            return order.getId();
-
-        } catch (error) {
-            if (shouldManageTransaction) {
-                // undo everything on failure
-                await dbClient.query('ROLLBACK');
-            }
-            logger.error("Failed to create order", error as Error);
-            throw new DbException("Failed to create order", error as Error);
-
-        } finally {
-            // Release DB connection if we created it
-            if (shouldManageTransaction) {
-                // returns the connection to the pool (runs even if an error is thrown)
-                dbClient.release();
-            }
-        }
+            } catch (error) {
+                logger.error("Failed to create order", error as Error);
+                throw new DbException("Failed to create order", error as Error);
+            } 
+        });
     }
 
-    async get(id: id, client?: any): Promise<IIdentifiableOrderItem> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
-
-        try {
-            const result = await dbClient.query(SELECT_BY_ID, [id]);
-            
-            if (result.rows.length === 0) {
-                throw new ItemNotFoundException("Order of id " + id + " not found");
-            }
-            
-            const orderRow = result.rows[0];
-
-            const item = await this.itemRepository.get(orderRow.item_id, dbClient);
-            
-            // convert DB rows into model object
-            return new DatabaseOrderMapper().map({
-                data: orderRow,
-                item: item
-            });
-
-        } catch (error: unknown) {
-            // if it's our known error, pass it through
-            if (error instanceof ItemNotFoundException) {
-                throw error;
-            }
-            
-            // otherwise, wrap it
-            logger.error("Failed to get order of id %s", id, error as Error);
-            throw new DbException("Failed to get order of id " + id, error as Error);
-        
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
-    }
-
-    async getAll(client?: any): Promise<IIdentifiableOrderItem[]> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
-
-        try {
-            const items = await this.itemRepository.getAll(dbClient);
-            
-            if (items.length === 0) {
-                return [];
-            }
-            
-            const result = await dbClient.query(SELECT_ALL, [items[0].getCategory()]);
-            
-            const orders = result.rows.map(orderRow => {
-                const item = items.find(item => item.getId() === orderRow.item_id);
-                if (!item) {
-                    throw new ItemNotFoundException("Item of id " + orderRow.item_id + " not found"); 
+    async get(id: id): Promise<IIdentifiableOrderItem> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(SELECT_BY_ID, [id]);
+                
+                if (result.rows.length === 0) {
+                    throw new ItemNotFoundException("Order of id " + id + " not found");
                 }
+                
+                const orderRow = result.rows[0];
+                const item = await this.itemRepository.get(orderRow.item_id);
                 
                 return new DatabaseOrderMapper().map({
                     data: orderRow,
                     item: item
                 });
-            });
-            
-            return orders;
 
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;
+                }
+                
+                logger.error("Failed to get order of id %s", id, error as Error);
+                throw new DbException("Failed to get order of id " + id, error as Error);
             }
-
-            logger.error("Failed to get all orders", error as Error);
-            throw new DbException("Failed to get all orders", error as Error);
-        
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
+        });
     }
 
-    async update(order: IIdentifiableOrderItem, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldManageTransaction = !client;
+    async getAll(): Promise<IIdentifiableOrderItem[]> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const items = await this.itemRepository.getAll();
+                
+                if (items.length === 0) {
+                    return [];
+                }
+                
+                const result = await client.query(SELECT_ALL, [items[0].getCategory()]);
+                
+                const orders = result.rows.map(orderRow => {
+                    const item = items.find(item => item.getId() === orderRow.item_id);
+                    if (!item) {
+                        throw new ItemNotFoundException("Item of id " + orderRow.item_id + " not found"); 
+                    }
+                    
+                    return new DatabaseOrderMapper().map({
+                        data: orderRow,
+                        item: item
+                    });
+                });
+                
+                return orders;
 
-        try {
-            if (shouldManageTransaction) {
-                await dbClient.query('BEGIN');
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;
+                }
+
+                logger.error("Failed to get all orders", error as Error);
+                throw new DbException("Failed to get all orders", error as Error);
             }
-
-            await this.itemRepository.update(order.getItem(), dbClient);
-
-            const result = await dbClient.query(UPDATE_ID, [
-                order.getQuantity(),
-                order.getPrice(),
-                order.getItem().getCategory(),
-                order.getItem().getId(),
-                order.getId()
-            ]);
-
-            if (result.rowCount === 0) {
-                throw new ItemNotFoundException("Order of id " + order.getId() + " not found"); 
-            }
-
-            if (shouldManageTransaction) {
-                await dbClient.query('COMMIT');
-            }
-
-            logger.info("Updated order with id %s", order.getId());
-            
-        } catch (error: unknown) {
-            if (shouldManageTransaction) {
-                await dbClient.query('ROLLBACK');
-            }
-            
-            if (error instanceof ItemNotFoundException) {
-                throw error;
-            }
-
-            logger.error("Failed to update order", error as Error);
-            throw new DbException("Failed to update order", error as Error);
-        
-        } finally {
-            if (shouldManageTransaction) {
-                dbClient.release();
-            }
-        }
+        });
     }
 
-    async delete(id: id, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldManageTransaction = !client;
+    async update(order: IIdentifiableOrderItem): Promise<void> {
+        return await PostgreSQLConnectionManager.runInTransaction(async () => {
+            try {
+                await this.itemRepository.update(order.getItem());
 
-        try {
-            if (shouldManageTransaction) {
-                await dbClient.query('BEGIN');
+                await PostgreSQLConnectionManager.runQuery(async (client) => {
+                    const result = await client.query(UPDATE_ID, [
+                        order.getQuantity(),
+                        order.getPrice(),
+                        order.getItem().getCategory(),
+                        order.getItem().getId(),
+                        order.getId()
+                    ]);
+
+                    if (result.rowCount === 0) {
+                        throw new ItemNotFoundException("Order of id " + order.getId() + " not found"); 
+                    }
+                });
+
+                logger.info("Updated order with id %s", order.getId());
+                
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;
+                }
+
+                logger.error("Failed to update order", error as Error);
+                throw new DbException("Failed to update order", error as Error);
             }
+        });
+    }
 
-            const orderResult = await dbClient.query(SELECT_BY_ID, [id]);
-            
-            if (orderResult.rows.length === 0) {
-                throw new ItemNotFoundException("Order of id " + id + " not found");
+    async delete(id: id): Promise<void> {
+        return await PostgreSQLConnectionManager.runInTransaction(async () => {
+            try {
+                await PostgreSQLConnectionManager.runQuery(async (client) => {
+                    const orderResult = await client.query(SELECT_BY_ID, [id]);
+                    
+                    if (orderResult.rows.length === 0) {
+                        throw new ItemNotFoundException("Order of id " + id + " not found");
+                    }
+
+                    const itemId = orderResult.rows[0].item_id;
+                    await this.itemRepository.delete(itemId);
+                    await client.query(DELETE_ID, [id]);
+                });
+
+                logger.info("Deleted order with id %s", id);
+                
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;
+                }
+
+                logger.error("Failed to delete order", error as Error);
+                throw new DbException("Failed to delete order", error as Error);
             }
-
-            const itemId = orderResult.rows[0].item_id;
-
-            await this.itemRepository.delete(itemId, dbClient);
-
-            await dbClient.query(DELETE_ID, [id]);
-
-            if (shouldManageTransaction) {
-                await dbClient.query('COMMIT');
-            }
-
-            logger.info("Deleted order with id %s", id);
-            
-        } catch (error: unknown) {
-            if (shouldManageTransaction) {
-                await dbClient.query('ROLLBACK');
-            }
-
-            if (error instanceof ItemNotFoundException) {
-                throw error;
-            }
-
-            logger.error("Failed to delete order", error as Error);
-            throw new DbException("Failed to delete order", error as Error);
-        
-        } finally {
-            if (shouldManageTransaction) {
-                dbClient.release();
-            }
-        }
+        });
     }
 }

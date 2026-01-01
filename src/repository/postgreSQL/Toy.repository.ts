@@ -5,7 +5,6 @@ import { id, Initializable, IRepository } from "../IRepository";
 import { DbException, InitializationException, ItemNotFoundException } from "../../util/exceptions/repositoryExceptions";
 import logger from "../../util/logger";
 import { PostgreSQLConnectionManager } from "./PostgreSQLConnectionManager";
-import { PoolClient } from "pg";
 import { DatabaseToy, DatabaseToyMapper } from "../../mappers/Toy.mapper";
 
 const tableName = ItemCategory.Toy;
@@ -52,151 +51,115 @@ export class ToyRepository implements IRepository<IdentifiableToy>, Initializabl
         }
     }
 
-    async create(item: IdentifiableToy, client?: any): Promise<id> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
+    async create(item: IdentifiableToy): Promise<id> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                await client.query(INSERT_TOY, [
+                    item.getId(),
+                    item.getType(),
+                    item.getAgeGroup(),
+                    item.getBrand(),
+                    item.getMaterial(),
+                    item.getBatteryRequired(),
+                    item.getEducational()
+                ]);
+                logger.info("Created toy with id %s", item.getId());
+                return item.getId();
 
-        try {
-            await dbClient.query(INSERT_TOY, [
-                item.getId(),
-                item.getType(),
-                item.getAgeGroup(),
-                item.getBrand(),
-                item.getMaterial(),
-                item.getBatteryRequired(),
-                item.getEducational()
-            ])
-            logger.info("Created toy with id %s", item.getId());
-            return item.getId();
-
-        } catch (error) {
-            logger.error("Failed to create toy", error as Error);
-            throw new DbException("Failed to create toy", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
+            } catch (error) {
+                logger.error("Failed to create toy", error as Error);
+                throw new DbException("Failed to create toy", error as Error);
             }
-        }
+        });
     }
 
-    async get(id: id, client?: any): Promise<IdentifiableToy> {
-        const pool = PostgreSQLConnectionManager.getPool(); 
-        const dbClient = (client as PoolClient) ?? await pool.connect(); 
-        const shouldRelease = !client;
-    
-        try {
-            const result = await dbClient.query(SELECT_BY_ID, [id]);
+    async get(id: id): Promise<IdentifiableToy> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(SELECT_BY_ID, [id]);
 
-            if (result.rows.length === 0) {
-                throw new ItemNotFoundException("Toy of id " + id + " not found");
-            }
-            
-            const row = result.rows[0];
-            return new DatabaseToyMapper().map(row);
+                if (result.rows.length === 0) {
+                    throw new ItemNotFoundException("Toy of id " + id + " not found");
+                }
+                
+                return new DatabaseToyMapper().map(result.rows[0]);
 
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+                
+                logger.error("Failed to get toy", error as Error);
+                throw new DbException("Failed to get toy", error as Error);
             }
-            
-            logger.error("Failed to get toy", error as Error);
-            throw new DbException("Failed to get toy", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
+        });
     }
 
-    async getAll(client?: any): Promise<IdentifiableToy[]> {
-        const pool = PostgreSQLConnectionManager.getPool(); 
-        const dbClient = (client as PoolClient) ?? await pool.connect(); 
-        const shouldRelease = !client;
-    
-        try {
-            const result = await dbClient.query(SELECT_ALL);
-            const mapper = new DatabaseToyMapper();
+    async getAll(): Promise<IdentifiableToy[]> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(SELECT_ALL);
+                const mapper = new DatabaseToyMapper();
 
-            return result.rows.map((row) => mapper.map(row as DatabaseToy));
-            
-        } catch (error: unknown) {
-            logger.error("Failed to get all toys", error as Error);
-            throw new DbException("Failed to get all toys", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
+                return result.rows.map((row) => mapper.map(row as DatabaseToy));
+                
+            } catch (error: unknown) {
+                logger.error("Failed to get all toys", error as Error);
+                throw new DbException("Failed to get all toys", error as Error);
             }
-        }  
+        });
     }
 
-    async update(item: IdentifiableToy, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
+    async update(item: IdentifiableToy): Promise<void> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(UPDATE_ID, [
+                    item.getType(),
+                    item.getAgeGroup(),
+                    item.getBrand(),
+                    item.getMaterial(),
+                    item.getBatteryRequired(),
+                    item.getEducational(),          
+                    item.getId()
+                ]);
 
-        try {
-            const result = await dbClient.query(UPDATE_ID, [
-                item.getType(),
-                item.getAgeGroup(),
-                item.getBrand(),
-                item.getMaterial(),
-                item.getBatteryRequired(),
-                item.getEducational(),          
-                item.getId()
-            ])
+                if (result.rowCount === 0) {
+                    throw new ItemNotFoundException("Toy of id " + item.getId() + " not found");
+                }
+                
+                logger.info("Updated toy Successfully");
 
-            if (result.rowCount === 0) {
-                throw new ItemNotFoundException("Toy of id " + item.getId() + " not found");
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+                
+                logger.error("Failed to update toy", error as Error);
+                throw new DbException("Failed to update toy", error as Error);
             }
-            
-            logger.info("Updated toy Successfully");
-
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
-            }
-            
-            logger.error("Failed to update toy", error as Error);
-            throw new DbException("Failed to update toy", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
+        });
     }
 
-    async delete(id: id, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
+    async delete(id: id): Promise<void> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(DELETE_ID, [id]);
 
-        try {
-            const result = await dbClient.query(DELETE_ID, [id]);
+                if (result.rowCount === 0) {
+                    throw new ItemNotFoundException("Toy of id " + id + " not found");
+                }
 
-            if (result.rowCount === 0) {
-                throw new ItemNotFoundException("Toy of id " + id + " not found");
+                logger.info("Deleted toy with id %s", id);
+
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+                
+                logger.error("Failed to delete toy", error as Error);
+                throw new DbException("Failed to delete toy", error as Error);
             }
-
-            logger.info("Deleted toy with id %s", id);
-
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
-            }
-            
-            logger.error("Failed to delete toy", error as Error);
-            throw new DbException("Failed to delete toy", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }    
+        });
     }
     
 }
