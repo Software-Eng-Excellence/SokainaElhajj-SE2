@@ -1,3 +1,4 @@
+import { PostgreSQLConnectionManager } from "../../../src/repository/postgreSQL/PostgreSQLConnectionManager";
 import { IdentifiableToy } from "../../../src/model/Toy.model";
 import { ToyRepository } from "../../../src/repository/postgreSQL/Toy.repository";
 import { DbException, InitializationException, ItemNotFoundException } from "../../../src/util/exceptions/repositoryExceptions";
@@ -14,7 +15,9 @@ const mockPool = {
 
 jest.mock("../../../src/repository/postgreSQL/PostgreSQLConnectionManager", () => ({
     PostgreSQLConnectionManager: {
-        getPool: jest.fn(() => mockPool)
+        getPool: jest.fn(() => mockPool),
+        // This simulates the manager providing a client to the repository methods
+        runQuery: jest.fn(async (callback) => await callback(mockClient))
     }
 }));
 
@@ -75,7 +78,6 @@ describe("Toy Repository - Unit Tests", () => {
                 expect.stringContaining('INSERT INTO'),
                 expect.arrayContaining(["toy-1", "Action Figure", "Hasbro"])
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -90,14 +92,12 @@ describe("Toy Repository - Unit Tests", () => {
                 expect.stringContaining('SELECT'),
                 ["toy-1"]
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it("should throw ItemNotFoundException when not found", async () => {
             mockClient.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
             await expect(repo.get("missing")).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -111,7 +111,6 @@ describe("Toy Repository - Unit Tests", () => {
             expect(results).toHaveLength(2);
             expect(results[0].getId()).toBe("toy-1");
             expect(results[1].getId()).toBe("toy-2");
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should return empty array when none exist', async () => {
@@ -120,7 +119,6 @@ describe("Toy Repository - Unit Tests", () => {
             const results = await repo.getAll();
 
             expect(results).toEqual([]);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -133,14 +131,12 @@ describe("Toy Repository - Unit Tests", () => {
                 expect.stringContaining('UPDATE'),
                 expect.arrayContaining(["toy-1", "Action Figure", "Hasbro"])
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw ItemNotFoundException when not found', async () => {
             mockClient.query.mockResolvedValue({ rowCount: 0 });
 
             await expect(repo.update(dummyToy)).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -153,83 +149,35 @@ describe("Toy Repository - Unit Tests", () => {
                 expect.stringContaining('DELETE'),
                 ["toy-1"]
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw ItemNotFoundException when not found', async () => {
             mockClient.query.mockResolvedValue({ rowCount: 0 });
 
             await expect(repo.delete("missing")).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
-    describe('Edge Cases', () => {
+    describe('Edge Cases & Error Handling', () => {
         it('should wrap database errors in DbException', async () => {
             mockClient.query.mockRejectedValue(new Error('connection lost'));
-
             await expect(repo.get("toy-1")).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
-        it('should not release client when passed externally', async () => {
-            mockClient.query.mockResolvedValue({ rows: [rawToyRow], rowCount: 1 });
-
-            await repo.get("toy-1", mockClient);
-
-            expect(mockClient.release).not.toHaveBeenCalled();
-        });
-
-        it('should propagate connection pool failure', async () => {
-            (mockPool.connect as jest.Mock).mockRejectedValue(
-                new Error('pool exhausted')
-            );
-
+        it('should propagate connection pool failure from Manager', async () => {
+            // Force the Manager to fail before it even calls the callback
+            (PostgreSQLConnectionManager.runQuery as jest.Mock).mockRejectedValueOnce(new Error('pool exhausted'));
             await expect(repo.create(dummyToy)).rejects.toThrow('pool exhausted');
         });
 
-        it('should always release connection on error', async () => {
-            mockClient.query.mockRejectedValue(new Error('unexpected'));
-
-            await expect(repo.delete("toy-1")).rejects.toThrow();
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
-        it('should throw DbException on invalid boolean type', async () => {
-            mockClient.query.mockRejectedValue(
-                new Error('invalid input syntax for type boolean: "not-a-boolean"')
-            );
-
-            const toyWithBadBoolean = {
-                ...dummyToy,
-                getBatteryRequired: () => "not-a-boolean"
-            } as unknown as IdentifiableToy;
-
-            await expect(repo.create(toyWithBadBoolean)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
-        it('should throw DbException when inserting null required fields', async () => {
-            mockClient.query.mockRejectedValue(
-                new Error('null value in column "type" violates not-null constraint')
-            );
-
-            const toyWithNull = {
-                ...dummyToy,
-                getType: () => null
-            } as unknown as IdentifiableToy;
-
-            await expect(repo.create(toyWithNull)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
         it('should throw DbException on duplicate entry', async () => {
-            mockClient.query.mockRejectedValue(
-                new Error('duplicate key value violates unique constraint')
-            );
-
+            mockClient.query.mockRejectedValue(new Error('duplicate key violates unique constraint'));
             await expect(repo.create(dummyToy)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
+        });
+
+        it('should handle constraint violations (null values)', async () => {
+            mockClient.query.mockRejectedValue(new Error('not-null constraint violation'));
+            await expect(repo.create(dummyToy)).rejects.toThrow(DbException);
         });
     });
 });
