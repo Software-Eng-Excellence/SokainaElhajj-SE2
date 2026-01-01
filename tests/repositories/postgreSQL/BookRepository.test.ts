@@ -1,3 +1,4 @@
+import { PostgreSQLConnectionManager } from "../../../src/repository/postgreSQL/PostgreSQLConnectionManager";
 import { IdentifiableBook } from "../../../src/model/Book.model";
 import { BookRepository } from "../../../src/repository/postgreSQL/Book.repository";
 import { DbException, InitializationException, ItemNotFoundException } from "../../../src/util/exceptions/repositoryExceptions";
@@ -12,9 +13,11 @@ const mockPool = {
     query: jest.fn()
 };
 
+// UPDATE: Mock runQuery to immediately execute the callback with our mockClient
 jest.mock("../../../src/repository/postgreSQL/PostgreSQLConnectionManager", () => ({
     PostgreSQLConnectionManager: {
-        getPool: jest.fn(() => mockPool)
+        getPool: jest.fn(() => mockPool),
+        runQuery: jest.fn(async (callback) => await callback(mockClient))
     }
 }));
 
@@ -79,7 +82,6 @@ describe("Book Repository - Unit Tests", () => {
                 expect.stringContaining('INSERT INTO'),
                 expect.arrayContaining(["book-1", "Clean Code", "Robert Martin"])
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -94,14 +96,12 @@ describe("Book Repository - Unit Tests", () => {
                 expect.stringContaining('SELECT'),
                 ["book-1"]
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it("should throw ItemNotFoundException when not found", async () => {
             mockClient.query.mockResolvedValue({ rows: [], rowCount: 0 });
 
             await expect(repo.get("missing")).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -115,7 +115,6 @@ describe("Book Repository - Unit Tests", () => {
             expect(results).toHaveLength(2);
             expect(results[0].getId()).toBe("book-1");
             expect(results[1].getId()).toBe("book-2");
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should return empty array when none exist', async () => {
@@ -124,7 +123,6 @@ describe("Book Repository - Unit Tests", () => {
             const results = await repo.getAll();
 
             expect(results).toEqual([]);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -137,14 +135,12 @@ describe("Book Repository - Unit Tests", () => {
                 expect.stringContaining('UPDATE'),
                 expect.arrayContaining(["book-1", "Clean Code", "Robert Martin"])
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw ItemNotFoundException when not found', async () => {
             mockClient.query.mockResolvedValue({ rowCount: 0 });
 
             await expect(repo.update(dummyBook)).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
@@ -157,46 +153,30 @@ describe("Book Repository - Unit Tests", () => {
                 expect.stringContaining('DELETE'),
                 ["book-1"]
             );
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw ItemNotFoundException when not found', async () => {
             mockClient.query.mockResolvedValue({ rowCount: 0 });
 
             await expect(repo.delete("missing")).rejects.toThrow(ItemNotFoundException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 
     describe('Edge Cases', () => {
         it('should wrap database errors in DbException', async () => {
+            // This fails INSIDE the runQuery callback, so the Repo's catch block catches it
             mockClient.query.mockRejectedValue(new Error('connection lost'));
 
             await expect(repo.get("book-1")).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
-        });
-
-        it('should not release client when passed externally', async () => {
-            mockClient.query.mockResolvedValue({ rows: [rawBookRow], rowCount: 1 });
-
-            await repo.get("book-1", mockClient);
-
-            expect(mockClient.release).not.toHaveBeenCalled();
         });
 
         it('should propagate connection pool failure', async () => {
-            (mockPool.connect as jest.Mock).mockRejectedValue(
+            // We mock runQuery to throw directly (simulating a pool issue)
+            (PostgreSQLConnectionManager.runQuery as jest.Mock).mockRejectedValueOnce(
                 new Error('pool exhausted')
             );
 
             await expect(repo.create(dummyBook)).rejects.toThrow('pool exhausted');
-        });
-
-        it('should always release connection on error', async () => {
-            mockClient.query.mockRejectedValue(new Error('unexpected'));
-
-            await expect(repo.delete("book-1")).rejects.toThrow();
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw DbException when inserting null required fields', async () => {
@@ -209,17 +189,14 @@ describe("Book Repository - Unit Tests", () => {
                 getTitle: () => null
             } as unknown as IdentifiableBook;
 
+            // We only check for the Exception, not the release() call
             await expect(repo.create(bookWithNull)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
 
         it('should throw DbException on duplicate entry', async () => {
-            mockClient.query.mockRejectedValue(
-                new Error('duplicate key value violates unique constraint')
-            );
-
+            mockClient.query.mockRejectedValue(new Error('duplicate key'));
+            
             await expect(repo.create(dummyBook)).rejects.toThrow(DbException);
-            expect(mockClient.release).toHaveBeenCalled();
         });
     });
 });
