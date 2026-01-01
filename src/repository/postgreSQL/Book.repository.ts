@@ -4,7 +4,6 @@ import { id, Initializable, IRepository } from "../IRepository";
 import { DbException, InitializationException, ItemNotFoundException } from "../../util/exceptions/repositoryExceptions";
 import logger from "../../util/logger";
 import { PostgreSQLConnectionManager } from "./PostgreSQLConnectionManager";
-import { PoolClient } from "pg";
 import { DatabaseBook, DatabaseBookMapper } from "../../mappers/Book.mapper";
 
 const tableName = ItemCategory.Book;
@@ -55,156 +54,118 @@ export class BookRepository implements IRepository<IdentifiableBook>, Initializa
         }
     }
 
-    async create(item: IdentifiableBook, client?: any): Promise<id> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
+    async create(item: IdentifiableBook): Promise<id> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                await client.query(INSERT_BOOK, [
+                    item.getId(),
+                    item.getTitle(),
+                    item.getAuthor(),
+                    item.getGenre(),
+                    item.getFormat(),
+                    item.getLanguage(),
+                    item.getPublisher(),
+                    item.getSpecialEdition(),
+                    item.getPackaging()
+                ]);
+                logger.info("Created book with id %s", item.getId());
+                return item.getId();
 
-        try {
-            await dbClient.query(INSERT_BOOK, [
-                item.getId(),
-                item.getTitle(),
-                item.getAuthor(),
-                item.getGenre(),
-                item.getFormat(),
-                item.getLanguage(),
-                item.getPublisher(),
-                item.getSpecialEdition(),
-                item.getPackaging()
-            ]);
-            logger.info("Created book with id %s", item.getId());
-            return item.getId();
-
-        } catch (error: unknown) {
-            logger.error("Failed to create book", error as Error);
-            throw new DbException("Failed to create book", error as Error);
-
-        } finally {
-            if (shouldRelease){
-                dbClient.release();
+            } catch (error: unknown) {
+                logger.error("Failed to create book", error as Error);
+                throw new DbException("Failed to create book", error as Error);
             }
-        }
+        });
     }
 
-    async get(id: id, client?: any): Promise<IdentifiableBook> {
-        const pool = PostgreSQLConnectionManager.getPool(); 
-        const dbClient = (client as PoolClient) ?? await pool.connect(); 
-        const shouldRelease = !client;
-    
-        try {
-            const result = await dbClient.query(SELECT_BY_ID, [id]);
+    async get(id: id): Promise<IdentifiableBook> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(SELECT_BY_ID, [id]);
 
-            if (result.rows.length === 0) {
-                throw new ItemNotFoundException("Book of id " + id + " not found");
-            }
-            
-            const row = result.rows[0];
-            return new DatabaseBookMapper().map(row);
+                if (result.rows.length === 0) {
+                    throw new ItemNotFoundException("Book of id " + id + " not found");
+                }
+                
+                return new DatabaseBookMapper().map(result.rows[0]);
 
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+                
+                logger.error("Failed to get book", error as Error);
+                throw new DbException("Failed to get book", error as Error);
             }
-            
-            logger.error("Failed to get book", error as Error);
-            throw new DbException("Failed to get book", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
+        });
     }
 
-    async getAll(client?: any): Promise<IdentifiableBook[]> {
-        const pool = PostgreSQLConnectionManager.getPool(); 
-        const dbClient = (client as PoolClient) ?? await pool.connect(); 
-        const shouldRelease = !client;
-    
-        try {
-            const result = await dbClient.query(SELECT_ALL);
-            const mapper = new DatabaseBookMapper();
+    async getAll(): Promise<IdentifiableBook[]> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(SELECT_ALL);
+                const mapper = new DatabaseBookMapper();
 
-            return result.rows.map((row) => mapper.map(row as DatabaseBook));
-            
-        } catch (error: unknown) {
-            logger.error("Failed to get all books", error as Error);
-            throw new DbException("Failed to get all books", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
+                return result.rows.map((row) => mapper.map(row as DatabaseBook));
+                
+            } catch (error: unknown) {
+                logger.error("Failed to get all books", error as Error);
+                throw new DbException("Failed to get all books", error as Error);
             }
-        }  
+        });
     }
 
-    async update(item: IdentifiableBook, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
+    async update(item: IdentifiableBook): Promise<void> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(UPDATE_ID, [
+                    item.getTitle(),
+                    item.getAuthor(),
+                    item.getGenre(),
+                    item.getFormat(),
+                    item.getLanguage(),
+                    item.getPublisher(),
+                    item.getSpecialEdition(),
+                    item.getPackaging(),
+                    item.getId()
+                ]);
 
-        try {
-            const result = await dbClient.query(UPDATE_ID, [
-                item.getTitle(),
-                item.getAuthor(),
-                item.getGenre(),
-                item.getFormat(),
-                item.getLanguage(),
-                item.getPublisher(),
-                item.getSpecialEdition(),
-                item.getPackaging(),
-                item.getId()
+                if (result.rowCount === 0) {
+                    throw new ItemNotFoundException("Book of id " + item.getId() + " not found");
+                }
+                
+                logger.info("Updated book Successfully");
 
-            ])
-
-            if (result.rowCount === 0) {
-                throw new ItemNotFoundException("Book of id " + item.getId() + " not found");
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+                
+                logger.error("Failed to update book", error as Error);
+                throw new DbException("Failed to update book", error as Error);
             }
-            
-            logger.info("Updated book Successfully");
-
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
-            }
-            
-            logger.error("Failed to update book", error as Error);
-            throw new DbException("Failed to update book", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }
+        });
     }
 
-    async delete(id: id, client?: any): Promise<void> {
-        const pool = PostgreSQLConnectionManager.getPool();
-        const dbClient = (client as PoolClient) ?? await pool.connect();
-        const shouldRelease = !client;
+    async delete(id: id): Promise<void> {
+        return await PostgreSQLConnectionManager.runQuery(async (client) => {
+            try {
+                const result = await client.query(DELETE_ID, [id]);
 
-        try {
-            const result = await dbClient.query(DELETE_ID, [id]);
+                if (result.rowCount === 0) {
+                    throw new ItemNotFoundException("Book of id " + id + " not found");
+                }
 
-            if (result.rowCount === 0) {
-                throw new ItemNotFoundException("Book of id " + id + " not found");
+                logger.info("Deleted book with id %s", id);
+
+            } catch (error: unknown) {
+                if (error instanceof ItemNotFoundException) {
+                    throw error;  
+                }
+                
+                logger.error("Failed to delete book", error as Error);
+                throw new DbException("Failed to delete book", error as Error);
             }
-
-            logger.info("Deleted book with id %s", id);
-
-        } catch (error: unknown) {
-            if (error instanceof ItemNotFoundException) {
-                throw error;  
-            }
-            
-            logger.error("Failed to delete book", error as Error);
-            throw new DbException("Failed to delete book", error as Error);
-
-        } finally {
-            if (shouldRelease) {
-                dbClient.release();
-            }
-        }    
+        });
     }
-    
 }
