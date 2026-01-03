@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import config from '../config'
 
-const isDev = config.NODE_ENV === 'development';
+const isDev = config.isDev;
 const logDir = config.logDir || './logs';
 
 // Ensure log directory exists
