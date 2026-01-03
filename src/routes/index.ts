@@ -12,4 +12,6 @@ routes.use('/analytics', authenticate, AnalyticsRoutes);
 routes.use('/users', UserRoutes);
 routes.use('/auth', AuthRoutes);
 
+routes.use('/health');
+
 export default routes;
