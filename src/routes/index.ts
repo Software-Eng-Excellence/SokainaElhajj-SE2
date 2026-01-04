@@ -5,7 +5,7 @@ import UserRoutes from "./user.route";
 import AuthRoutes from "./auth.route";
 import { authenticate } from "../middleware/auth";
 import logger from "../util/logger";
-import { ConnectionManager } from "repository/sqlite/ConnectionManager";
+import { ConnectionManager } from "../repository/sqlite/ConnectionManager";
 
 const routes = Router();
 
