@@ -3,7 +3,7 @@ import path from "path";
 import { DBMode } from "./types";
 import { StringValue } from "ms";
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), `.env.${process.env.NODE_ENV}`) });
 
 export default {
     isDev: process.env.NODE_ENV === 'development',

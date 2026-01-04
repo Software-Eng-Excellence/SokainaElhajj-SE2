@@ -6,8 +6,9 @@
 /build
 coverage/
 .vscode/
-.env
+.env.*
 logs/
 node_modules/
 node_modules/*.json
 *.db
+src/data/*
