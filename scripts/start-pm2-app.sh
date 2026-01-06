@@ -4,7 +4,7 @@
 echo "🚀 Starting the app on pm2"
 
 # Navigate into the app directory
-cd ~/SE2 || exit
+cd ~/SokainaElhajj-SE2 || exit
 
 # Start the app using pm2 with the production environment
 pm2 start ecosystem.config.js --env production
