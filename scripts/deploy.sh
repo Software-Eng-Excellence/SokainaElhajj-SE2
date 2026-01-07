@@ -22,7 +22,7 @@ BUILD_DIR="${APP_DIR}/build"
 HEALTH_CHECK_URL="http://localhost:3000/health/status"
 DB_HEALTH_CHECK_URL="http://localhost:3000/health/db"
 APP_NAME="se2"
-GIT_BRANCH="master"
+GIT_BRANCH="main"
 MIN_FREE_SPACE_GB=2
 
 # Colors and Emojis
