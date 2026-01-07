@@ -154,8 +154,8 @@ check_application_files() {
     local essential_files=(
         "package.json"
         "ecosystem.config.js"
-        "build/index.js"
-        "build/app.js"
+        "build/src/index.js"
+        "build/src/app.js"
     )
 
     for file in "${essential_files[@]}"; do
@@ -182,16 +182,17 @@ check_application_files() {
     fi
 
     # Check data directory
-    if [[ -d "src/data" ]]; then
+    if [[ -d "data" ]]; then
         record_check "Data Directory" "PASS" "Directory exists"
 
-        # Check database file
-        if [[ -f "src/data/orders.db" ]]; then
-            local db_size=$(ls -lh "src/data/orders.db" | awk '{print $5}')
-            record_check "Database File" "PASS" "Size: $db_size"
-        else
-            record_check "Database File" "WARN" "Database file not found"
-        fi
+        # Check data directory and database file
+    	local DB_PATH="/home/sami-dev/db/production.sqlite"
+    	if [[ -f "$DB_PATH" ]]; then
+        	local db_size=$(ls -lh "$DB_PATH" | awk '{print $5}')
+        	record_check "Database File" "PASS" "Size: $db_size (Location: ~/db/)"
+    	else
+        	record_check "Database File" "FAIL" "Database not found at $DB_PATH"
+    	fi
     else
         record_check "Data Directory" "WARN" "Data directory not found"
     fi
@@ -314,8 +315,8 @@ check_application_endpoints() {
 
     # Test a few more endpoints if they exist
     local endpoints=(
-        "http://localhost:3000/api"
-        "http://localhost:3000/api/auth"
+        "http://localhost:3000/health/status"
+        "http://localhost:3000/users"
     )
 
     for endpoint in "${endpoints[@]}"; do
@@ -419,17 +420,14 @@ check_log_files() {
     for log_file in "${log_files[@]}"; do
         if [[ -f "$log_file" ]]; then
             local file_size=$(ls -lh "$log_file" | awk '{print $5}')
-            local last_modified=$(stat -c %y "$log_file" 2>/dev/null || stat -f "%Sm" "$log_file" 2>/dev/null || echo "unknown")
+            
+            # This version ensures we only get ONE number, even if there's weird output
+            local recent_errors=$(tail -n 100 "$log_file" 2>/dev/null | grep -c "$(date +%Y-%m-%d)" | head -n 1)
+            recent_errors=${recent_errors:-0} # Default to 0 if empty
 
-            # Check for recent errors
-            local recent_errors=0
-            if [[ "$log_file" == *"error"* ]] || [[ "$log_file" == *"exception"* ]]; then
-                recent_errors=$(tail -n 100 "$log_file" 2>/dev/null | grep -c "$(date +%Y-%m-%d)" || echo 0)
-            fi
-
-            if [[ $recent_errors -gt 10 ]]; then
+            if [ "$recent_errors" -gt 10 ]; then
                 record_check "Log: $(basename "$log_file")" "FAIL" "Size: $file_size, $recent_errors recent errors"
-            elif [[ $recent_errors -gt 0 ]]; then
+            elif [ "$recent_errors" -gt 0 ]; then
                 record_check "Log: $(basename "$log_file")" "WARN" "Size: $file_size, $recent_errors recent errors"
             else
                 record_check "Log: $(basename "$log_file")" "PASS" "Size: $file_size, no recent errors"
