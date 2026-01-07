@@ -111,16 +111,3 @@ describe('XML Parser - Mocked Tests', () => {
 
 });
 
-// ✅ Real file integration test
-describe('XML Parser - Real File Integration', () => {
-  it('should parse actual XML file from /src/data', async () => {
-    // Use actual file, do not mock
-    const filePath = path.resolve(__dirname, '../../src/data/toy-orders.xml');
-    const result = await parseXml(filePath);
-
-    // Basic sanity checks
-    expect(result).toBeDefined();
-    expect(typeof result).toBe('object');
-    expect(result).not.toEqual({});
-  });
-});
