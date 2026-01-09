@@ -40,6 +40,13 @@ app.use((req, res) => {
     res.status(404).json({ error: "Not Found "});
 })
 
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: "Deployment sync is working perfectly!", 
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // When you define a function with 4 arguments, Express identifies it as an Error Handling Middleware, run it if you call next(error)
 // After: Enhanced Global Error Handler
 app.use((err: Error, req: Request, res: Response) => {
