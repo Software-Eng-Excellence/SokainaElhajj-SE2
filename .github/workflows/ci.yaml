@@ -109,11 +109,18 @@ jobs:
           draft: false
           prerelease: false
           make_latest: true
+  deploy-app:
+    needs: [build, test, lint]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-actions@master
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: 
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
             ~/SokainaElhajj-SE2/scripts/deploy-orchestration.sh
