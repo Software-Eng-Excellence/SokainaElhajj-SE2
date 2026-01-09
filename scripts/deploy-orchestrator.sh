@@ -122,31 +122,20 @@ create_lock() {
 
 cleanup() {
     local exit_code=$?
-    
-    # Kill the timeout process and its children
     if [[ -n "${TIMEOUT_PID:-}" ]]; then
-        # This kills the subshell and anything inside it (like the sleep)
         pkill -P "$TIMEOUT_PID" 2>/dev/null || true
         kill -9 "$TIMEOUT_PID" 2>/dev/null || true
     fi
-
-    if [[ -f "$LOCK_FILE" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
-
-    # Final "Handshake" to close the SSH pipe
+    [[ -f "$LOCK_FILE" ]] && rm -f "$LOCK_FILE"
     exit $exit_code
 }
 
 setup_timeout() {
     (
-        # Disconnect this subshell from the terminal pipes
         sleep "$MAX_DEPLOYMENT_TIME" >/dev/null 2>&1
-        log_error "Deployment timeout reached (${MAX_DEPLOYMENT_TIME}s)"
         kill -TERM $$ 2>/dev/null || true
     ) &
     TIMEOUT_PID=$!
-    # Disown ensures the shell doesn't wait for this background job
     disown $TIMEOUT_PID 2>/dev/null || true
 }
 

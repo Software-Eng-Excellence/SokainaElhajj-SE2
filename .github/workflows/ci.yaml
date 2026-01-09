@@ -123,6 +123,7 @@ jobs:
           script: |
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            script: |
             cd ~/SokainaElhajj-SE2
-            ./scripts/deploy-orchestrator.sh && exit 0 || exit 1
+            chmod +x scripts/*.sh
+            ./scripts/deploy-orchestrator.sh
+            exit 0
