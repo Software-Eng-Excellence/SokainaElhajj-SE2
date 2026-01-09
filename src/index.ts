@@ -35,17 +35,18 @@ app.get('/greet', (req: Request, res: Response) => {
     res.status(200).json({ message: "Hello, welcome to ordering store; done by Sukaina!" });
 });
 
-// config 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: "Not Found "});
-})
-
 app.get('/test', (req, res) => {
   res.json({ 
     message: "Deployment sync is working perfectly!", 
     timestamp: new Date().toISOString() 
   });
 });
+
+// config 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: "Not Found "});
+})
+
 
 // When you define a function with 4 arguments, Express identifies it as an Error Handling Middleware, run it if you call next(error)
 // After: Enhanced Global Error Handler
