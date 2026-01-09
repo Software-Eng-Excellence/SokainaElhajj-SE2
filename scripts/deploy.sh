@@ -260,7 +260,8 @@ pull_updates() {
 
     log_step "Pulling latest changes..."
     local before_commit=$(git rev-parse HEAD)
-    git pull origin "$GIT_BRANCH"
+    git fetch origin main
+    git reset --hard origin/main    
     local after_commit=$(git rev-parse HEAD)
 
     if [[ "$before_commit" == "$after_commit" ]]; then
