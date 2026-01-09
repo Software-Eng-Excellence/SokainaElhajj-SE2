@@ -31,6 +31,10 @@ app.use(cookieParser());
 // config routes
 app.use('/', routes);
 
+app.get('/greet', (req: Request, res: Response) => {
+    res.status(200).json({ message: "Hello, welcome to ordering store; done by Sukaina!" });
+});
+
 // config 404 handler
 app.use((req, res) => {
     res.status(404).json({ error: "Not Found "});
