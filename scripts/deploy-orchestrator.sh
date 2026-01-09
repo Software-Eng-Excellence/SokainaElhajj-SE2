@@ -120,41 +120,34 @@ create_lock() {
     log_info "Created deployment lock (PID: $$)"
 }
 
-# Cleanup function
 cleanup() {
     local exit_code=$?
-
-    log_info "Cleaning up deployment process..."
-
-    # 1. KILL THE TIMEOUT PROCESS (Prevents GitHub Actions from hanging)
+    
+    # Kill the timeout process and its children
     if [[ -n "${TIMEOUT_PID:-}" ]]; then
+        # This kills the subshell and anything inside it (like the sleep)
         pkill -P "$TIMEOUT_PID" 2>/dev/null || true
-        kill "$TIMEOUT_PID" 2>/dev/null || true
-        log_info "Killed background timeout process"
+        kill -9 "$TIMEOUT_PID" 2>/dev/null || true
     fi
 
-    # 2. Remove lock file
     if [[ -f "$LOCK_FILE" ]]; then
         rm -f "$LOCK_FILE"
-        log_info "Removed deployment lock"
     fi
 
-    if [[ $exit_code -ne 0 ]]; then
-        log_error "Deployment failed with exit code $exit_code"
-        log_info "Check the log file: $LOG_FILE"
-    fi
-
+    # Final "Handshake" to close the SSH pipe
     exit $exit_code
 }
 
-# Function to setup deployment timeout
 setup_timeout() {
     (
-        sleep "$MAX_DEPLOYMENT_TIME"
+        # Disconnect this subshell from the terminal pipes
+        sleep "$MAX_DEPLOYMENT_TIME" >/dev/null 2>&1
         log_error "Deployment timeout reached (${MAX_DEPLOYMENT_TIME}s)"
         kill -TERM $$ 2>/dev/null || true
     ) &
     TIMEOUT_PID=$!
+    # Disown ensures the shell doesn't wait for this background job
+    disown $TIMEOUT_PID 2>/dev/null || true
 }
 
 # Function to validate environment
