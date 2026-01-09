@@ -1,6 +1,6 @@
 {
   "name": "se2",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "main": "index.js",
   "scripts": {
     "lint": "eslint src",
