@@ -126,3 +126,4 @@ jobs:
             cd ~/SokainaElhajj-SE2
             chmod +x scripts/deploy-orchestrator.sh
             ./scripts/deploy-orchestrator.sh
+            exit 0
