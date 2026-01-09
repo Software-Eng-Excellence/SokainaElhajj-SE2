@@ -120,7 +120,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: 
-            export NVM_DIR=~/.nvm
-            source ~/.nvm/nvm.sh
-            ~/SokainaElhajj-SE2/scripts/deploy-orchestration.sh
+          script: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            cd ~/SokainaElhajj-SE2
+            chmod +x scripts/deploy-orchestrator.sh
+            ./scripts/deploy-orchestrator.sh
