@@ -109,3 +109,11 @@ jobs:
           draft: false
           prerelease: false
           make_latest: true
+      - name: Deploy via SSH
+        uses: appleboy/ssh-actions@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: 
+            ~/SokainaElhajj-SE2/scripts/deploy-orchestration.sh
