@@ -1,15 +1,16 @@
 import logger from "./util/logger";
-import { parseCSV } from "./parsers/csvParser";
-import { CSVCakeMapper } from "./mappers/Cake.mapper";
-import { CSVOrderMapper } from "./mappers/Order.mapper";
+import { OrderMapper } from "./mappers/Order.mapper";
+import { parseXml } from "./parsers/xmlParser";
+import { ToyMapper } from "./mappers/Toy.mapper";
 
 async function main() {
-  const data = await parseCSV("src/data/cake-orders.csv");
-  const cakeMapper = new CSVCakeMapper();
-  const orderMapper = new CSVOrderMapper(cakeMapper);
-  const orders = data.map(orderMapper.map.bind(orderMapper));
 
-  logger.info("List of orders: \n %o", orders);
+  // xml test
+  const xmlData: any = await parseXml("src/data/toy-orders.xml");
+  const toyMapper = new ToyMapper();
+  const xmlOrderMapper = new OrderMapper(toyMapper);
+  const xmlOrders = xmlData.data.row.map(xmlOrderMapper.map.bind(xmlOrderMapper));
+  logger.info("List of toy orders:\n %o", xmlOrders);
 }
 
 main();
